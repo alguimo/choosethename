@@ -1,11 +1,13 @@
+import .env as env;
+
 spring:
   application:
     name: choosethename-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/app_db
-    username: alvaro
-    password: "123456"
-    driver-class-name: org.postgresql.Driver
+    url: env.BDD_URL
+    username: env.BDD_USERNAME
+    password: env.BDD_PASSWORD
+    driver-class-name: env.BDD_DRIVER
   jpa:
     hibernate:
       ddl-auto: validate
