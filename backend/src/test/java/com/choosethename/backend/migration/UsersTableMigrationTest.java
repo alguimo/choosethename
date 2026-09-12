@@ -38,4 +38,32 @@ class UsersTableMigrationTest {
             )
         ).isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    @Test
+    @DisplayName("Should enforce NOT NULL constraints on required fields")
+    void shouldEnforceNotNullConstraints() {
+        // null username
+        assertThatThrownBy(() ->
+            jdbcTemplate.update(
+                "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+                null, "hashed_pass_123", "ADMIN"
+            )
+        ).isInstanceOf(DataIntegrityViolationException.class);
+
+        // null password_hash
+        assertThatThrownBy(() ->
+            jdbcTemplate.update(
+                "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+                "user1", null, "ADMIN"
+            )
+        ).isInstanceOf(DataIntegrityViolationException.class);
+
+        // null role
+        assertThatThrownBy(() ->
+            jdbcTemplate.update(
+                "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+                "user2", "hashed_pass_123", null
+            )
+        ).isInstanceOf(DataIntegrityViolationException.class);
+    }
 }

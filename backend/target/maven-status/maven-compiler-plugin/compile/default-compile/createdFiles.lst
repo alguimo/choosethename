@@ -1,0 +1,6 @@
+com/choosethename/backend/dto/UserMapperImpl.class
+com/choosethename/backend/BackendApplication.class
+com/choosethename/backend/dto/UserDTO.class
+com/choosethename/backend/model/User.class
+com/choosethename/backend/dto/UserMapper.class
+com/choosethename/backend/model/Role.class

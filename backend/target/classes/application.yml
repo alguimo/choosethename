@@ -1,0 +1,19 @@
+import .env as env;
+
+spring:
+  application:
+    name: choosethename-backend
+  datasource:
+    url: env.BDD_URL
+    username: env.BDD_USERNAME
+    password: env.BDD_PASSWORD
+    driver-class-name: env.BDD_DRIVER
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
