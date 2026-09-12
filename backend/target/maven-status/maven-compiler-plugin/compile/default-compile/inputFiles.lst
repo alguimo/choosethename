@@ -3,3 +3,5 @@
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/UserMapper.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/model/Role.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/model/User.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/repository/UserRepository.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/service/RegistrationService.java
