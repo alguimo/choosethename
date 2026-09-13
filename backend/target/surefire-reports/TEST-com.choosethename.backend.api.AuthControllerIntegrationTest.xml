@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.choosethename.backend.dto.UserMapperTest" time="0.03" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.choosethename.backend.api.AuthControllerIntegrationTest" time="2.702" tests="3" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="17"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -7,6 +7,9 @@
     <property name="java.vm.vendor" value="Microsoft"/>
     <property name="sun.arch.data.model" value="64"/>
     <property name="java.vendor.url" value="https://www.microsoft.com"/>
+    <property name="catalina.useNaming" value="false"/>
+    <property name="user.timezone" value="Europe/Paris"/>
+    <property name="org.jboss.logging.provider" value="slf4j"/>
     <property name="os.name" value="Mac OS X"/>
     <property name="java.vm.specification.version" value="17"/>
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
@@ -28,6 +31,8 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="FILE_LOG_CHARSET" value="UTF-8"/>
+    <property name="java.awt.headless" value="true"/>
     <property name="surefire.real.class.path" value="/Users/alvaro/Dev/choosethename/backend/target/surefire/surefirebooter-20260913160703990_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
@@ -42,10 +47,15 @@
     <property name="localRepository" value="/Users/alvaro/.m2/repository"/>
     <property name="java.vendor.url.bug" value="https://github.com/microsoft/openjdk/issues"/>
     <property name="java.io.tmpdir" value="/var/folders/rj/l4z8s3b10z90bpx2psmvb4tc0000gn/T/"/>
+    <property name="catalina.home" value="/private/var/folders/rj/l4z8s3b10z90bpx2psmvb4tc0000gn/T/tomcat.0.7610604014054719123"/>
+    <property name="com.zaxxer.hikari.pool_number" value="1"/>
     <property name="java.version" value="17.0.15"/>
     <property name="user.dir" value="/Users/alvaro/Dev/choosethename/backend"/>
     <property name="os.arch" value="aarch64"/>
     <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PID" value="17887"/>
+    <property name="CONSOLE_LOG_CHARSET" value="UTF-8"/>
+    <property name="catalina.base" value="/private/var/folders/rj/l4z8s3b10z90bpx2psmvb4tc0000gn/T/tomcat.0.7610604014054719123"/>
     <property name="native.encoding" value="UTF-8"/>
     <property name="java.library.path" value="/Users/alvaro/Library/Java/Extensions:/Library/Java/Extensions:/Network/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java:."/>
     <property name="java.vm.info" value="mixed mode, sharing"/>
@@ -55,6 +65,63 @@
     <property name="sun.io.unicode.encoding" value="UnicodeBig"/>
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="61.0"/>
+    <property name="LOGGED_APPLICATION_NAME" value="[choosethename-backend-test] "/>
   </properties>
-  <testcase name="shouldMapUserToUserDTO" classname="com.choosethename.backend.dto.UserMapperTest" time="0.023"/>
+  <testcase name="shouldReturn401WhenAccessingProtectedEndpointWithInvalidToken" classname="com.choosethename.backend.api.AuthControllerIntegrationTest" time="0.29">
+    <system-out><![CDATA[16:07:04.436 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.choosethename.backend.api.AuthControllerIntegrationTest]: AuthControllerIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:07:04.485 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.choosethename.backend.BackendApplication for test class com.choosethename.backend.api.AuthControllerIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.3)
+
+2026-09-13T16:07:04.635+02:00  INFO 17887 --- [choosethename-backend-test] [           main] c.c.b.api.AuthControllerIntegrationTest  : Starting AuthControllerIntegrationTest using Java 17.0.15 with PID 17887 (started by alvaro in /Users/alvaro/Dev/choosethename/backend)
+2026-09-13T16:07:04.636+02:00  INFO 17887 --- [choosethename-backend-test] [           main] c.c.b.api.AuthControllerIntegrationTest  : No active profile set, falling back to 1 default profile: "default"
+2026-09-13T16:07:04.930+02:00  INFO 17887 --- [choosethename-backend-test] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-13T16:07:04.951+02:00  INFO 17887 --- [choosethename-backend-test] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 18 ms. Found 1 JPA repository interface.
+2026-09-13T16:07:05.169+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-09-13T16:07:05.178+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-13T16:07:05.179+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.28]
+2026-09-13T16:07:05.197+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-13T16:07:05.198+02:00  INFO 17887 --- [choosethename-backend-test] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 483 ms
+2026-09-13T16:07:05.283+02:00  INFO 17887 --- [choosethename-backend-test] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-13T16:07:05.356+02:00  INFO 17887 --- [choosethename-backend-test] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+2026-09-13T16:07:05.356+02:00  INFO 17887 --- [choosethename-backend-test] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-13T16:07:05.376+02:00  INFO 17887 --- [choosethename-backend-test] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:h2:mem:testdb (H2 2.2)
+2026-09-13T16:07:05.380+02:00  WARN 17887 --- [choosethename-backend-test] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: H2 2.2.224 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.220.
+2026-09-13T16:07:05.387+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "PUBLIC"."flyway_schema_history" does not exist yet
+2026-09-13T16:07:05.388+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.004s)
+2026-09-13T16:07:05.392+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "PUBLIC"."flyway_schema_history" ...
+2026-09-13T16:07:05.409+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "PUBLIC": << Empty Schema >>
+2026-09-13T16:07:05.411+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "PUBLIC" to version "1 - create users table"
+2026-09-13T16:07:05.420+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema "PUBLIC", now at version v1 (execution time 00:00.002s)
+2026-09-13T16:07:05.456+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-09-13T16:07:05.479+02:00  INFO 17887 --- [choosethename-backend-test] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2026-09-13T16:07:05.492+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-09-13T16:07:05.590+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-13T16:07:05.609+02:00  WARN 17887 --- [choosethename-backend-test] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-09-13T16:07:05.922+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-09-13T16:07:05.929+02:00  INFO 17887 --- [choosethename-backend-test] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-13T16:07:06.055+02:00  WARN 17887 --- [choosethename-backend-test] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-09-13T16:07:06.062+02:00  WARN 17887 --- [choosethename-backend-test] [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 090e34b4-c643-4c15-97e1-388f65673eff
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-09-13T16:07:06.065+02:00  INFO 17887 --- [choosethename-backend-test] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-09-13T16:07:06.259+02:00  INFO 17887 --- [choosethename-backend-test] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 51588 (http) with context path '/'
+2026-09-13T16:07:06.264+02:00  INFO 17887 --- [choosethename-backend-test] [           main] c.c.b.api.AuthControllerIntegrationTest  : Started AuthControllerIntegrationTest in 1.728 seconds (process running for 2.237)
+2026-09-13T16:07:06.540+02:00  INFO 17887 --- [choosethename-backend-test] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-13T16:07:06.540+02:00  INFO 17887 --- [choosethename-backend-test] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-13T16:07:06.540+02:00  INFO 17887 --- [choosethename-backend-test] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+]]></system-out>
+  </testcase>
+  <testcase name="shouldLoginAndAccessProtectedEndpoint" classname="com.choosethename.backend.api.AuthControllerIntegrationTest" time="0.548"/>
+  <testcase name="shouldReturn401WhenAccessingProtectedEndpointWithoutToken" classname="com.choosethename.backend.api.AuthControllerIntegrationTest" time="0.003"/>
 </testsuite>
