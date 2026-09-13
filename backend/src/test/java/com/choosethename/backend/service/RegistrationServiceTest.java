@@ -1,5 +1,6 @@
 package com.choosethename.backend.service;
 
+import com.choosethename.backend.exception.UserAlreadyExistsException;
 import com.choosethename.backend.model.User;
 import com.choosethename.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +49,7 @@ class RegistrationServiceTest {
         when(userRepository.findByUsername("user1")).thenReturn(Optional.of(new User()));
 
         assertThatThrownBy(() -> registrationService.registerParticipant("user1", "Password123"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(UserAlreadyExistsException.class)
                 .hasMessage("Username already exists");
     }
 

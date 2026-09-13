@@ -19,6 +19,8 @@ class UsersTableMigrationTest {
     @Test
     @DisplayName("Should create users table with required columns")
     void shouldCreateUsersTableWithRequiredColumns() {
+        // Clear potential data from other tests
+        jdbcTemplate.update("DELETE FROM users");
         Integer count = jdbcTemplate.queryForObject("SELECT count(*) FROM users", Integer.class);
         assertThat(count).isNotNull().isZero();
     }

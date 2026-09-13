@@ -1,8 +1,13 @@
+com/choosethename/backend/dto/RegisterRequestDTO.class
+com/choosethename/backend/exception/UserAlreadyExistsException.class
+com/choosethename/backend/dto/UserDTO.class
+com/choosethename/backend/exception/GlobalExceptionHandler.class
+com/choosethename/backend/model/User.class
+com/choosethename/backend/model/Role.class
+com/choosethename/backend/service/RegistrationService.class
 com/choosethename/backend/dto/UserMapperImpl.class
 com/choosethename/backend/repository/UserRepository.class
 com/choosethename/backend/BackendApplication.class
-com/choosethename/backend/dto/UserDTO.class
-com/choosethename/backend/model/User.class
 com/choosethename/backend/dto/UserMapper.class
-com/choosethename/backend/model/Role.class
-com/choosethename/backend/service/RegistrationService.class
+com/choosethename/backend/security/SecurityConfig.class
+com/choosethename/backend/api/RegistrationController.class

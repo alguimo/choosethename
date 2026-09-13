@@ -1,3 +1,4 @@
+/Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/api/RegistrationIntegrationTest.java
 /Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/dto/UserMapperTest.java
 /Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/migration/UsersTableMigrationTest.java
 /Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/service/RegistrationServiceTest.java

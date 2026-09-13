@@ -1,7 +1,12 @@
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/BackendApplication.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/api/RegistrationController.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/RegisterRequestDTO.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/UserDTO.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/UserMapper.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/exception/GlobalExceptionHandler.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/exception/UserAlreadyExistsException.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/model/Role.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/model/User.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/repository/UserRepository.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/security/SecurityConfig.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/service/RegistrationService.java

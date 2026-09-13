@@ -1,5 +1,6 @@
 package com.choosethename.backend.service;
 
+import com.choosethename.backend.exception.UserAlreadyExistsException;
 import com.choosethename.backend.model.Role;
 import com.choosethename.backend.model.User;
 import com.choosethename.backend.repository.UserRepository;
@@ -23,7 +24,7 @@ public class RegistrationService {
         }
 
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new UserAlreadyExistsException("Username already exists");
         }
 
         validatePassword(password);

@@ -1,3 +1,4 @@
 com/choosethename/backend/dto/UserMapperTest.class
 com/choosethename/backend/migration/UsersTableMigrationTest.class
+com/choosethename/backend/api/RegistrationIntegrationTest.class
 com/choosethename/backend/service/RegistrationServiceTest.class

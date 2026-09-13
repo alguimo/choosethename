@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.choosethename.backend.service.RegistrationServiceTest" time="0.551" tests="3" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.choosethename.backend.api.RegistrationIntegrationTest" time="2.496" tests="3" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="17"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -64,7 +64,55 @@
     <property name="java.class.version" value="61.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[choosethename-backend-test] "/>
   </properties>
-  <testcase name="shouldRejectWeakPassword" classname="com.choosethename.backend.service.RegistrationServiceTest" time="0.092"/>
-  <testcase name="shouldRejectDuplicateUsername" classname="com.choosethename.backend.service.RegistrationServiceTest" time="0.005"/>
-  <testcase name="shouldRegisterParticipantSuccessfully" classname="com.choosethename.backend.service.RegistrationServiceTest" time="0.453"/>
+  <testcase name="shouldRejectWeakPassword" classname="com.choosethename.backend.api.RegistrationIntegrationTest" time="0.329">
+    <system-out><![CDATA[15:14:43.627 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.choosethename.backend.api.RegistrationIntegrationTest]: RegistrationIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+15:14:43.670 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.choosethename.backend.BackendApplication for test class com.choosethename.backend.api.RegistrationIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.3)
+
+2026-09-13T15:14:43.800+02:00  INFO 11895 --- [choosethename-backend-test] [           main] c.c.b.api.RegistrationIntegrationTest    : Starting RegistrationIntegrationTest using Java 17.0.15 with PID 11895 (started by alvaro in /Users/alvaro/Dev/choosethename/backend)
+2026-09-13T15:14:43.801+02:00  INFO 11895 --- [choosethename-backend-test] [           main] c.c.b.api.RegistrationIntegrationTest    : No active profile set, falling back to 1 default profile: "default"
+2026-09-13T15:14:44.043+02:00  INFO 11895 --- [choosethename-backend-test] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-13T15:14:44.064+02:00  INFO 11895 --- [choosethename-backend-test] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 16 ms. Found 1 JPA repository interface.
+2026-09-13T15:14:44.282+02:00  INFO 11895 --- [choosethename-backend-test] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-13T15:14:44.355+02:00  INFO 11895 --- [choosethename-backend-test] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+2026-09-13T15:14:44.356+02:00  INFO 11895 --- [choosethename-backend-test] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-13T15:14:44.375+02:00  INFO 11895 --- [choosethename-backend-test] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:h2:mem:testdb (H2 2.2)
+2026-09-13T15:14:44.382+02:00  WARN 11895 --- [choosethename-backend-test] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: H2 2.2.224 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.220.
+2026-09-13T15:14:44.390+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "PUBLIC"."flyway_schema_history" does not exist yet
+2026-09-13T15:14:44.391+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.005s)
+2026-09-13T15:14:44.394+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "PUBLIC"."flyway_schema_history" ...
+2026-09-13T15:14:44.411+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "PUBLIC": << Empty Schema >>
+2026-09-13T15:14:44.414+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "PUBLIC" to version "1 - create users table"
+2026-09-13T15:14:44.422+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema "PUBLIC", now at version v1 (execution time 00:00.003s)
+2026-09-13T15:14:44.457+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-09-13T15:14:44.478+02:00  INFO 11895 --- [choosethename-backend-test] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.2.Final
+2026-09-13T15:14:44.491+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-09-13T15:14:44.591+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-13T15:14:44.607+02:00  WARN 11895 --- [choosethename-backend-test] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-09-13T15:14:44.888+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-09-13T15:14:44.895+02:00  INFO 11895 --- [choosethename-backend-test] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-13T15:14:45.008+02:00  WARN 11895 --- [choosethename-backend-test] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-09-13T15:14:45.016+02:00  WARN 11895 --- [choosethename-backend-test] [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 889621e6-fa35-408d-94c3-f945ded2b60f
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-09-13T15:14:45.018+02:00  INFO 11895 --- [choosethename-backend-test] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-09-13T15:14:45.243+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T15:14:45.243+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T15:14:45.244+02:00  INFO 11895 --- [choosethename-backend-test] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-09-13T15:14:45.254+02:00  INFO 11895 --- [choosethename-backend-test] [           main] c.c.b.api.RegistrationIntegrationTest    : Started RegistrationIntegrationTest in 1.547 seconds (process running for 1.882)
+]]></system-out>
+  </testcase>
+  <testcase name="shouldRejectDuplicateUsername" classname="com.choosethename.backend.api.RegistrationIntegrationTest" time="0.249"/>
+  <testcase name="shouldRegisterParticipantSuccessfully" classname="com.choosethename.backend.api.RegistrationIntegrationTest" time="0.231"/>
 </testsuite>
