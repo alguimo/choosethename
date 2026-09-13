@@ -1,4 +1,10 @@
+/Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/api/AuthControllerIntegrationTest.java
 /Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/api/RegistrationIntegrationTest.java
 /Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/dto/UserMapperTest.java
+/Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/functional/RestAssuredSystemClient.java
+/Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/functional/Spec001FunctionalTest.java
+/Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/functional/SystemClient.java
 /Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/migration/UsersTableMigrationTest.java
+/Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/security/JwtServiceTest.java
+/Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/service/AuthenticationServiceTest.java
 /Users/alvaro/Dev/choosethename/backend/src/test/java/com/choosethename/backend/service/RegistrationServiceTest.java

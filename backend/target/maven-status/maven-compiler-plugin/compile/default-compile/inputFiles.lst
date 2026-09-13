@@ -1,5 +1,9 @@
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/BackendApplication.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/api/AuthController.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/api/RegistrationController.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/api/TestController.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/AuthResponseDTO.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/LoginRequestDTO.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/RegisterRequestDTO.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/UserDTO.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/dto/UserMapper.java
@@ -8,5 +12,8 @@
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/model/Role.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/model/User.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/repository/UserRepository.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/security/JwtFilter.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/security/JwtService.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/security/SecurityConfig.java
+/Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/service/AuthenticationService.java
 /Users/alvaro/Dev/choosethename/backend/src/main/java/com/choosethename/backend/service/RegistrationService.java
