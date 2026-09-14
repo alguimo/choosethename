@@ -1,5 +1,6 @@
 package com.choosethename.backend.exception;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,5 +29,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ListAccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleListAccessDenied(ListAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateNameException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateName(DuplicateNameException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BlankNameException.class)
+    public ResponseEntity<Map<String, String>> handleBlankName(BlankNameException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, String>> handleOptimisticLocking(OptimisticLockingFailureException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Concurrent modification detected. Please retry."));
     }
 }

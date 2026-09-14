@@ -1,0 +1,1 @@
+ALTER TABLE list_memberships ADD COLUMN finished_at TIMESTAMP WITH TIME ZONE;

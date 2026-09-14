@@ -22,4 +22,10 @@ public class ListMembershipEntity {
     
     @Column(name = "joined_at")
     private Instant joinedAt;
+
+    @Column(name = "finished_at")
+    private Instant finishedAt;
+
+    @Column(name = "selection_completed_at")
+    private Instant selectionCompletedAt;
 }

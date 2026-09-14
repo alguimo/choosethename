@@ -1,0 +1,52 @@
+package com.choosethename.backend.controller;
+
+import com.choosethename.backend.dto.AdoptNameRequestDTO;
+import com.choosethename.backend.dto.SelectionResponseDTO;
+import com.choosethename.backend.exception.ListNotFoundException;
+import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.service.SelectionService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1/lists")
+public class SelectionController {
+
+    private final SelectionService selectionService;
+    private final UserRepository userRepository;
+
+    public SelectionController(SelectionService selectionService, UserRepository userRepository) {
+        this.selectionService = selectionService;
+        this.userRepository = userRepository;
+    }
+
+    @GetMapping("/{id}/selection")
+    public ResponseEntity<SelectionResponseDTO> getSelection(
+            @PathVariable Long id,
+            @AuthenticationPrincipal String username) {
+        Long userId = requireUserId(username);
+        return ResponseEntity.ok(selectionService.getSelection(id, userId));
+    }
+
+    @PostMapping("/{id}/selection/adopt")
+    public ResponseEntity<Void> adoptFadedName(
+            @PathVariable Long id,
+            @RequestBody AdoptNameRequestDTO request,
+            @AuthenticationPrincipal String username) {
+        Long userId = requireUserId(username);
+        selectionService.adoptFadedName(id, userId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    private Long requireUserId(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ListNotFoundException("User not found"))
+                .getId();
+    }
+}

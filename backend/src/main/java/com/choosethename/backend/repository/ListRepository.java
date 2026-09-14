@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +18,6 @@ public interface ListRepository extends JpaRepository<ListEntity, Long> {
            "(SELECT m.listId FROM ListMembershipEntity m WHERE m.userId = :userId) " +
            "AND l.phase IN :phases")
     List<ListEntity> findActiveListsForUser(@Param("userId") Long userId, @Param("phases") List<String> phases);
+
+    List<ListEntity> findByPhaseAndCreatedAtBefore(String phase, Instant createdAt);
 }
