@@ -23,4 +23,8 @@ public class ListEntity {
     private boolean invitationsOpen;
     @Column(name = "owner_id")
     private Long ownerId;
+    @Version
+    private int version;
+    @Column(name = "created_at")
+    private Instant createdAt;
 }

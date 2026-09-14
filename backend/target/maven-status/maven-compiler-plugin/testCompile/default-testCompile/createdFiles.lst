@@ -1,10 +1,15 @@
 com/choosethename/backend/controller/ListControllerIntegrationTest.class
+com/choosethename/backend/controller/Spec003IntegrationTest.class
 com/choosethename/backend/security/JwtServiceTest.class
 com/choosethename/backend/api/AuthControllerIntegrationTest.class
 com/choosethename/backend/service/RegistrationServiceTest.class
 com/choosethename/backend/service/ListServiceJoinTest.class
 com/choosethename/backend/dto/UserMapperTest.class
 com/choosethename/backend/dto/ListMapperTest.class
+com/choosethename/backend/service/ListPhaseTransitionServiceTest.class
+com/choosethename/backend/service/SelectionServiceTest.class
+com/choosethename/backend/migration/NamesTableMigrationTest.class
+com/choosethename/backend/service/NameServiceTest.class
 com/choosethename/backend/service/AuthenticationServiceTest.class
 com/choosethename/backend/service/InvitationCodeGeneratorTest.class
 com/choosethename/backend/migration/UsersTableMigrationTest.class
@@ -14,4 +19,5 @@ com/choosethename/backend/functional/RestAssuredSystemClient.class
 com/choosethename/backend/service/ListServiceTest.class
 com/choosethename/backend/functional/SystemClient.class
 com/choosethename/backend/api/RegistrationIntegrationTest.class
+com/choosethename/backend/service/NameNormalizerTest.class
 com/choosethename/backend/service/ListServiceCloseInvitationsTest.class

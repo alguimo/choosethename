@@ -48,6 +48,7 @@ public class ListService {
         entity.setCodeExpiresAt(Instant.now().plusSeconds(CODE_VALIDITY_SECONDS));
         entity.setPhase("ADDITION");
         entity.setInvitationsOpen(true);
+        entity.setCreatedAt(Instant.now());
 
         ListEntity saved = listRepository.save(entity);
 
