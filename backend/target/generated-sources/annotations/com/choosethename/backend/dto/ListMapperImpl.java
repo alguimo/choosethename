@@ -8,26 +8,34 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-09-14T19:05:10+0200",
+    date = "2026-09-15T09:53:02+0200",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.15 (Microsoft)"
 )
 @Component
 public class ListMapperImpl implements ListMapper {
 
     @Override
-    public ListResponseDTO toResponseDTO(ListEntity entity, List<String> members, String ownerUsername) {
-        if ( entity == null && members == null && ownerUsername == null ) {
+    public ListResponseDTO toResponseDTO(ListEntity entity, List<String> members, String ownerUsername, List<String> currentPool) {
+        if ( entity == null && members == null && ownerUsername == null && currentPool == null ) {
             return null;
         }
 
         ListResponseDTO listResponseDTO = new ListResponseDTO();
 
         if ( entity != null ) {
+            if ( entity.getCurrentRound() != null ) {
+                listResponseDTO.setCurrentRound( entity.getCurrentRound() );
+            }
+            if ( entity.getTotalRounds() != null ) {
+                listResponseDTO.setTotalRounds( entity.getTotalRounds() );
+            }
             listResponseDTO.setId( entity.getId() );
             listResponseDTO.setName( entity.getName() );
             listResponseDTO.setInvitationCode( entity.getInvitationCode() );
             listResponseDTO.setCodeExpiresAt( entity.getCodeExpiresAt() );
-            listResponseDTO.setPhase( entity.getPhase() );
+            if ( entity.getPhase() != null ) {
+                listResponseDTO.setPhase( entity.getPhase().name() );
+            }
             listResponseDTO.setInvitationsOpen( entity.isInvitationsOpen() );
         }
         List<String> list = members;
@@ -35,6 +43,10 @@ public class ListMapperImpl implements ListMapper {
             listResponseDTO.setMembers( new ArrayList<String>( list ) );
         }
         listResponseDTO.setOwnerUsername( ownerUsername );
+        List<String> list1 = currentPool;
+        if ( list1 != null ) {
+            listResponseDTO.setCurrentPool( new ArrayList<String>( list1 ) );
+        }
 
         return listResponseDTO;
     }

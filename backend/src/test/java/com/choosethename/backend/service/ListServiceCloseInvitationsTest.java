@@ -9,6 +9,7 @@ import com.choosethename.backend.model.User;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VotingRoundRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +43,7 @@ class ListServiceCloseInvitationsTest {
     @Mock private ListMembershipRepository membershipRepository;
     @Mock private ListMapper listMapper;
     @Mock private UserRepository userRepository;
+    @Mock private VotingRoundRepository votingRoundRepository;
     @InjectMocks private ListService listService;
 
     private ListEntity ownedList() {
@@ -56,7 +58,7 @@ class ListServiceCloseInvitationsTest {
     private void stubResponseDto() {
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(new User()));
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
                 .thenReturn(new ListResponseDTO());
     }
 

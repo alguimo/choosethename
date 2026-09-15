@@ -7,6 +7,7 @@ import com.choosethename.backend.exception.DuplicateNameException;
 import com.choosethename.backend.exception.ListNotFoundException;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
+import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.ListMembershipEntity;
 import com.choosethename.backend.model.Role;
 import com.choosethename.backend.model.User;
@@ -62,9 +63,11 @@ class NameServiceTest {
         list.setName("Test List");
         list.setOwnerId(userA.getId());
         list.setInvitationCode("CODE" + System.nanoTime() % 1000000);
-        list.setPhase("ADDITION");
+        list.setPhase(ListPhase.ADDITION);
         list.setInvitationsOpen(true);
         list.setCodeExpiresAt(Instant.now().plusSeconds(48 * 3600));
+        list.setCurrentRound(1);
+        list.setTotalRounds(1);
         list.setCreatedAt(Instant.now());
         listRepository.save(list);
 
@@ -151,7 +154,7 @@ class NameServiceTest {
     @Test
     @DisplayName("Should reject addition when list is not in ADDITION phase")
     void shouldRejectAdditionWhenNotInAdditionPhase() {
-        list.setPhase("SELECTION");
+        list.setPhase(ListPhase.SELECTION);
         listRepository.save(list);
 
         AddNameRequestDTO request = new AddNameRequestDTO();
@@ -213,5 +216,23 @@ class NameServiceTest {
         assertThatThrownBy(() -> nameService.addNames(list.getId(), outsider.getId(), request))
                 .isInstanceOf(ListOperationException.class)
                 .hasMessage("User is not a member of this list");
+    }
+
+    @Test
+    @DisplayName("Should reject a null request body with 400")
+    void shouldRejectNullRequestBody() {
+        assertThatThrownBy(() -> nameService.addNames(list.getId(), userA.getId(), null))
+                .isInstanceOf(ListOperationException.class)
+                .hasMessage("Request body is required");
+    }
+
+    @Test
+    @DisplayName("Should reject a null names list with 400")
+    void shouldRejectNullNamesList() {
+        AddNameRequestDTO request = new AddNameRequestDTO();
+
+        assertThatThrownBy(() -> nameService.addNames(list.getId(), userA.getId(), request))
+                .isInstanceOf(ListOperationException.class)
+                .hasMessage("Names list is required");
     }
 }

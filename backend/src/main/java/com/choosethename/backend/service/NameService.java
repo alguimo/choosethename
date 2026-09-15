@@ -8,6 +8,7 @@ import com.choosethename.backend.exception.ListNotFoundException;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListMembershipEntity;
+import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.NameEntity;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
@@ -24,8 +25,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NameService {
 
-    private static final String RULE_ADDITION_PHASE = "ADDITION";
-
     private final NameRepository nameRepository;
     private final ListRepository listRepository;
     private final ListMembershipRepository membershipRepository;
@@ -34,14 +33,22 @@ public class NameService {
 
     @Transactional
     public NameResponseDTO addNames(Long listId, Long userId, AddNameRequestDTO request) {
+        if (request == null) {
+            throw new ListOperationException("Request body is required");
+        }
+
         ListEntity list = listRepository.findById(listId)
                 .orElseThrow(() -> new ListNotFoundException("List not found"));
 
-        if (!RULE_ADDITION_PHASE.equals(list.getPhase())) {
+        if (list.getPhase() != ListPhase.ADDITION) {
             throw new ListOperationException("Names can only be added during the ADDITION phase");
         }
 
         ensureUserIsMember(listId, userId);
+
+        if (request.getNames() == null) {
+            throw new ListOperationException("Names list is required");
+        }
 
         List<NameResponseDTO.NameEntry> addedNames = new ArrayList<>();
         for (String rawName : request.getNames()) {

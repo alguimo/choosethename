@@ -1,36 +1,28 @@
 package com.choosethename.backend.functional;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class Spec001FunctionalTest {
-
-    @LocalServerPort
-    private int port;
+class Spec001FunctionalTest extends FunctionalTestBase {
 
     @Test
     void testSpec001Scenarios() {
-        SystemClient client = new RestAssuredSystemClient(port);
-
         // TS-1: Register successfully
-        assertEquals(201, client.register("newuser", "Password123"));
+        assertThat(client.register("newuser", PASSWORD).getStatusCode()).isEqualTo(201);
 
         // TS-2: Duplicate username
-        assertEquals(409, client.register("newuser", "Password123"));
+        assertThat(client.register("newuser", PASSWORD).getStatusCode()).isEqualTo(409);
 
         // TS-3: Login valid
-        String token = client.login("newuser", "Password123");
-        assertNotNull(token);
+        String token = client.login("newuser", PASSWORD).jsonPath().getString("accessToken");
+        assertThat(token).isNotNull();
 
         // TS-4: Login invalid
-        assertNull(client.login("newuser", "WrongPass"));
+        assertThat(client.login("newuser", "WrongPass").getStatusCode()).isEqualTo(401);
 
         // TS-5: Access protected
-        assertEquals(200, client.getProtectedResource(token));
-        assertEquals(401, client.getProtectedResource("invalid.token"));
+        assertThat(client.getProtectedResource(token).getStatusCode()).isEqualTo(200);
+        assertThat(client.getProtectedResource("invalid.token").getStatusCode()).isEqualTo(401);
     }
 }

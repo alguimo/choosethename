@@ -6,6 +6,7 @@ import com.choosethename.backend.dto.NameResponseDTO;
 import com.choosethename.backend.dto.SelectionResponseDTO;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
+import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.ListMembershipEntity;
 import com.choosethename.backend.model.Role;
 import com.choosethename.backend.model.User;
@@ -61,9 +62,11 @@ class SelectionServiceTest {
         list.setName("Test List");
         list.setOwnerId(userA.getId());
         list.setInvitationCode("CODE" + System.nanoTime() % 1000000);
-        list.setPhase("ADDITION");
+        list.setPhase(ListPhase.ADDITION);
         list.setInvitationsOpen(true);
         list.setCodeExpiresAt(Instant.now().plusSeconds(48 * 3600));
+        list.setCurrentRound(1);
+        list.setTotalRounds(1);
         list.setCreatedAt(Instant.now());
         listRepository.save(list);
 
@@ -157,6 +160,81 @@ class SelectionServiceTest {
                 .hasMessage("Names can only be adopted during the SELECTION phase");
     }
 
+    @Test
+    @DisplayName("Should reject adoption with a null request body")
+    void shouldRejectNullRequestBody() {
+        enterSelectionPhase();
+
+        assertThatThrownBy(() -> selectionService.adoptFadedName(list.getId(), userA.getId(), null))
+                .isInstanceOf(ListOperationException.class)
+                .hasMessage("Request body is required");
+    }
+
+    @Test
+    @DisplayName("Should identify common and faded names for three members (majority >1)")
+    void threeMemberMajorityMatching() {
+        User userC = createUser("charlie");
+        ListEntity list3 = createList("Three", userA.getId(), userB.getId(), userC.getId());
+
+        addNameToList(list3.getId(), userA.getId(), "Pablo", "Maria");
+        addNameToList(list3.getId(), userB.getId(), "Pablo", "Lucia");
+        addNameToList(list3.getId(), userC.getId(), "Pablo", "Elena");
+
+        list3.setPhase(ListPhase.SELECTION);
+        listRepository.save(list3);
+
+        SelectionResponseDTO response = selectionService.getSelection(list3.getId(), userC.getId());
+
+        assertThat(names(response.getCommonNames())).containsExactly("pablo");
+        assertThat(names(response.getFadedSuggestions())).containsExactly("maria", "lucia");
+        assertThat(names(response.getMyNames())).containsExactly("pablo", "elena");
+    }
+
+    @Test
+    @DisplayName("Should identify faded suggestions across three pools for the member that lacks them")
+    void threeMemberFadedSuggestionsDistributed() {
+        User userC = createUser("charlie");
+        ListEntity list3 = createList("ThreePools", userA.getId(), userB.getId(), userC.getId());
+
+        addNameToList(list3.getId(), userA.getId(), "Maria");
+        addNameToList(list3.getId(), userB.getId(), "Lucia");
+        addNameToList(list3.getId(), userC.getId(), "Elena");
+
+        list3.setPhase(ListPhase.SELECTION);
+        listRepository.save(list3);
+
+        SelectionResponseDTO responseForA = selectionService.getSelection(list3.getId(), userA.getId());
+
+        assertThat(responseForA.getCommonNames()).isEmpty();
+        assertThat(names(responseForA.getFadedSuggestions())).containsExactly("lucia", "elena");
+    }
+
+    @Test
+    @DisplayName("Should restrict faded adoption to names in other pools, not common names")
+    void threeMemberAdoptionOnlyForFaded() {
+        User userC = createUser("charlie");
+        ListEntity list3 = createList("ThreeAdopt", userA.getId(), userB.getId(), userC.getId());
+
+        addNameToList(list3.getId(), userA.getId(), "Pablo");
+        addNameToList(list3.getId(), userB.getId(), "Pablo", "Lucia");
+        addNameToList(list3.getId(), userC.getId(), "Pablo", "Elena");
+
+        list3.setPhase(ListPhase.SELECTION);
+        listRepository.save(list3);
+
+        AdoptNameRequestDTO common = new AdoptNameRequestDTO();
+        common.setName("Pablo");
+        assertThatThrownBy(() -> selectionService.adoptFadedName(list3.getId(), userA.getId(), common))
+                .isInstanceOf(ListOperationException.class)
+                .hasMessage("Name is not a faded suggestion for this user");
+
+        AdoptNameRequestDTO faded = new AdoptNameRequestDTO();
+        faded.setName("Lucia");
+        selectionService.adoptFadedName(list3.getId(), userA.getId(), faded);
+
+        assertThat(sharedNamePoolRepository.countByListId(list3.getId())).isEqualTo(1);
+    }
+
     private void enterSelectionPhase() {
         addName(userA.getId(), "Pablo");
         addName(userA.getId(), "Maria");
@@ -194,5 +272,31 @@ class SelectionServiceTest {
         membership.setUserId(userId);
         membership.setJoinedAt(Instant.now());
         membershipRepository.save(membership);
+    }
+
+    private ListEntity createList(String name, Long... memberIds) {
+        ListEntity list = new ListEntity();
+        list.setName(name);
+        list.setOwnerId(memberIds[0]);
+        list.setInvitationCode("SEL" + System.nanoTime() % 1000000);
+        list.setPhase(ListPhase.ADDITION);
+        list.setInvitationsOpen(true);
+        list.setCodeExpiresAt(Instant.now().plusSeconds(48 * 3600));
+        list.setCurrentRound(1);
+        list.setTotalRounds(1);
+        list.setCreatedAt(Instant.now());
+        list = listRepository.save(list);
+        for (Long userId : memberIds) {
+            addMembership(list.getId(), userId);
+        }
+        return list;
+    }
+
+    private void addNameToList(Long listId, Long userId, String... nameValues) {
+        for (String name : nameValues) {
+            AddNameRequestDTO request = new AddNameRequestDTO();
+            request.setNames(List.of(name));
+            nameService.addNames(listId, userId, request);
+        }
     }
 }
