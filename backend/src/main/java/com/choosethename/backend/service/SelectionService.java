@@ -6,6 +6,7 @@ import com.choosethename.backend.dto.SelectionResponseDTO;
 import com.choosethename.backend.exception.ListNotFoundException;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
+import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.NameEntity;
 import com.choosethename.backend.model.SharedNamePoolEntity;
 import com.choosethename.backend.repository.ListMembershipRepository;
@@ -18,7 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,8 +30,6 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class SelectionService {
-
-    private static final String RULE_SELECTION_PHASE = "SELECTION";
 
     private final ListRepository listRepository;
     private final ListMembershipRepository membershipRepository;
@@ -39,29 +41,45 @@ public class SelectionService {
     public SelectionResponseDTO getSelection(Long listId, Long userId) {
         ListEntity list = listRepository.findById(listId)
                 .orElseThrow(() -> new ListNotFoundException("List not found"));
-        if (!RULE_SELECTION_PHASE.equals(list.getPhase())) {
+        if (list.getPhase() != ListPhase.SELECTION) {
             throw new ListOperationException("Selection is only available during the SELECTION phase");
         }
         ensureUserIsMember(listId, userId);
 
-        List<NameEntity> myEntities = nameRepository.findByListIdAndUserId(listId, userId);
-        List<NameEntity> otherEntities = nameRepository.findByListId(listId).stream()
-                .filter(n -> !n.getUserId().equals(userId))
+        List<NameEntity> allNames = nameRepository.findByListId(listId).stream()
+                .sorted(Comparator.comparing(NameEntity::getId))
                 .toList();
+        List<NameEntity> myEntities = allNames.stream()
+                .filter(n -> n.getUserId().equals(userId))
+                .toList();
+        Set<String> myNormalized = myEntities.stream()
+                .map(NameEntity::getNormalizedName)
+                .collect(java.util.stream.Collectors.toSet());
 
-        Map<String, NameEntity> myByNormalized = indexByNormalized(myEntities);
-        Map<String, NameEntity> otherByNormalized = indexByNormalized(otherEntities);
+        long totalMembers = membershipRepository.countByListId(listId);
+        long majorityThreshold = totalMembers / 2;
+        Map<String, Integer> presence = presencePerName(allNames);
 
         List<NameResponseDTO.NameEntry> commonNames = new ArrayList<>();
-        for (NameEntity mine : myEntities) {
-            if (otherByNormalized.containsKey(mine.getNormalizedName())) {
-                commonNames.add(entry(mine));
+        for (Map.Entry<String, Integer> entry : presence.entrySet()) {
+            if (entry.getValue() > majorityThreshold) {
+                String normalized = entry.getKey();
+                NameEntity sample = allNames.stream()
+                        .filter(n -> n.getNormalizedName().equals(normalized))
+                        .findFirst()
+                        .orElseThrow();
+                commonNames.add(new NameResponseDTO.NameEntry(sample.getName(), sample.getNormalizedName()));
             }
         }
 
         List<NameResponseDTO.NameEntry> fadedSuggestions = new ArrayList<>();
-        for (NameEntity other : otherEntities) {
-            if (!myByNormalized.containsKey(other.getNormalizedName())) {
+        for (NameEntity other : allNames) {
+            if (other.getUserId().equals(userId)) {
+                continue;
+            }
+            String normalized = other.getNormalizedName();
+            boolean common = presence.getOrDefault(normalized, 0) > majorityThreshold;
+            if (!myNormalized.contains(normalized) && !common) {
                 fadedSuggestions.add(entry(other));
             }
         }
@@ -75,9 +93,13 @@ public class SelectionService {
 
     @Transactional
     public void adoptFadedName(Long listId, Long userId, AdoptNameRequestDTO request) {
+        if (request == null) {
+            throw new ListOperationException("Request body is required");
+        }
+
         ListEntity list = listRepository.findById(listId)
                 .orElseThrow(() -> new ListNotFoundException("List not found"));
-        if (!RULE_SELECTION_PHASE.equals(list.getPhase())) {
+        if (list.getPhase() != ListPhase.SELECTION) {
             throw new ListOperationException("Names can only be adopted during the SELECTION phase");
         }
         ensureUserIsMember(listId, userId);
@@ -88,17 +110,20 @@ public class SelectionService {
         }
 
         List<NameEntity> allNames = nameRepository.findByListId(listId);
-        List<NameEntity> otherNames = allNames.stream()
-                .filter(n -> !n.getUserId().equals(userId))
-                .toList();
         Set<String> myNormalized = allNames.stream()
                 .filter(n -> n.getUserId().equals(userId))
                 .map(NameEntity::getNormalizedName)
                 .collect(java.util.stream.Collectors.toSet());
-
-        boolean inOtherPool = otherNames.stream()
+        boolean inOtherPool = allNames.stream()
+                .filter(n -> !n.getUserId().equals(userId))
                 .anyMatch(n -> n.getNormalizedName().equals(normalized));
-        if (!inOtherPool || myNormalized.contains(normalized)) {
+
+        long totalMembers = membershipRepository.countByListId(listId);
+        long majorityThreshold = totalMembers / 2;
+        int presence = presencePerName(allNames).getOrDefault(normalized, 0);
+        boolean common = presence > majorityThreshold;
+
+        if (!inOtherPool || myNormalized.contains(normalized) || common) {
             throw new ListOperationException("Name is not a faded suggestion for this user");
         }
 
@@ -114,12 +139,19 @@ public class SelectionService {
         sharedNamePoolRepository.save(entry);
     }
 
-    private Map<String, NameEntity> indexByNormalized(List<NameEntity> entities) {
-        Map<String, NameEntity> map = new LinkedHashMap<>();
+    private Map<String, Integer> presencePerName(List<NameEntity> entities) {
+        Map<Long, Set<String>> memberPools = new LinkedHashMap<>();
         for (NameEntity entity : entities) {
-            map.put(entity.getNormalizedName(), entity);
+            memberPools.computeIfAbsent(entity.getUserId(), k -> new LinkedHashSet<>())
+                    .add(entity.getNormalizedName());
         }
-        return map;
+        Map<String, Integer> presence = new HashMap<>();
+        for (Set<String> pool : memberPools.values()) {
+            for (String normalized : pool) {
+                presence.merge(normalized, 1, Integer::sum);
+            }
+        }
+        return presence;
     }
 
     private NameResponseDTO.NameEntry entry(NameEntity entity) {

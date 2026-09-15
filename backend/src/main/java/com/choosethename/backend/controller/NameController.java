@@ -2,8 +2,7 @@ package com.choosethename.backend.controller;
 
 import com.choosethename.backend.dto.AddNameRequestDTO;
 import com.choosethename.backend.dto.NameResponseDTO;
-import com.choosethename.backend.exception.ListNotFoundException;
-import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.service.CurrentUserResolver;
 import com.choosethename.backend.service.ListPhaseTransitionService;
 import com.choosethename.backend.service.NameService;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +19,13 @@ public class NameController {
 
     private final NameService nameService;
     private final ListPhaseTransitionService phaseTransitionService;
-    private final UserRepository userRepository;
+    private final CurrentUserResolver currentUserResolver;
 
     public NameController(NameService nameService, ListPhaseTransitionService phaseTransitionService,
-                          UserRepository userRepository) {
+                          CurrentUserResolver currentUserResolver) {
         this.nameService = nameService;
         this.phaseTransitionService = phaseTransitionService;
-        this.userRepository = userRepository;
+        this.currentUserResolver = currentUserResolver;
     }
 
     @PostMapping("/{id}/names")
@@ -34,7 +33,7 @@ public class NameController {
             @PathVariable Long id,
             @RequestBody AddNameRequestDTO request,
             @AuthenticationPrincipal String username) {
-        Long userId = requireUserId(username);
+        Long userId = currentUserResolver.requireUserId(username);
         return ResponseEntity.ok(nameService.addNames(id, userId, request));
     }
 
@@ -42,7 +41,7 @@ public class NameController {
     public ResponseEntity<Void> finishAddition(
             @PathVariable Long id,
             @AuthenticationPrincipal String username) {
-        Long userId = requireUserId(username);
+        Long userId = currentUserResolver.requireUserId(username);
         nameService.finishAddition(id, userId);
         return ResponseEntity.ok().build();
     }
@@ -51,14 +50,8 @@ public class NameController {
     public ResponseEntity<Void> completeSelection(
             @PathVariable Long id,
             @AuthenticationPrincipal String username) {
-        Long userId = requireUserId(username);
+        Long userId = currentUserResolver.requireUserId(username);
         phaseTransitionService.completeSelection(id, userId);
         return ResponseEntity.ok().build();
-    }
-
-    private Long requireUserId(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ListNotFoundException("User not found"))
-                .getId();
     }
 }

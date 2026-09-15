@@ -13,6 +13,8 @@ import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.NameRepository;
 import com.choosethename.backend.repository.SharedNamePoolRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VoteRepository;
+import com.choosethename.backend.repository.VotingRoundRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -32,10 +34,14 @@ class Spec003IntegrationTest {
     @Autowired private ListMembershipRepository membershipRepository;
     @Autowired private NameRepository nameRepository;
     @Autowired private SharedNamePoolRepository sharedNamePoolRepository;
+    @Autowired private VoteRepository voteRepository;
+    @Autowired private VotingRoundRepository votingRoundRepository;
 
     @BeforeEach
     void setup() {
         RestAssured.port = port;
+        voteRepository.deleteAll();
+        votingRoundRepository.deleteAll();
         sharedNamePoolRepository.deleteAll();
         nameRepository.deleteAll();
         membershipRepository.deleteAll();

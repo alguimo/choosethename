@@ -5,11 +5,13 @@ import com.choosethename.backend.dto.ListResponseDTO;
 import com.choosethename.backend.exception.ListNotFoundException;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
+import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.ListMembershipEntity;
 import com.choosethename.backend.model.User;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VotingRoundRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +47,7 @@ class ListServiceTest {
     @Mock private InvitationCodeGenerator codeGenerator;
     @Mock private ListMapper listMapper;
     @Mock private UserRepository userRepository;
+    @Mock private VotingRoundRepository votingRoundRepository;
     @InjectMocks private ListService listService;
 
     private User owner() {
@@ -55,7 +58,7 @@ class ListServiceTest {
     }
 
     private void stubResponseDto() {
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
                 .thenReturn(new ListResponseDTO());
     }
 
@@ -82,7 +85,7 @@ class ListServiceTest {
         assertThat(saved.getOwnerId()).isEqualTo(OWNER_ID);
         assertThat(saved.getInvitationCode()).isEqualTo(VALID_CODE);
         assertThat(saved.getCodeExpiresAt()).isAfter(Instant.now().plusSeconds(47 * 3600));
-        assertThat(saved.getPhase()).isEqualTo("ADDITION");
+        assertThat(saved.getPhase()).isEqualTo(ListPhase.ADDITION);
         assertThat(saved.isInvitationsOpen()).isTrue();
 
         ArgumentCaptor<ListMembershipEntity> membershipCaptor = ArgumentCaptor.forClass(ListMembershipEntity.class);
@@ -131,7 +134,7 @@ class ListServiceTest {
         ListResponseDTO result = listService.getActiveList(OWNER_ID);
 
         assertThat(result).isNotNull();
-        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"));
+        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList());
     }
 
     @Test

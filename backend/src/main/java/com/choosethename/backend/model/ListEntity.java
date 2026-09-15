@@ -18,11 +18,16 @@ public class ListEntity {
     private String invitationCode;
     @Column(name = "code_expires_at")
     private Instant codeExpiresAt;
-    private String phase;
+    @Enumerated(EnumType.STRING)
+    private ListPhase phase;
     @Column(name = "invitations_open")
     private boolean invitationsOpen;
     @Column(name = "owner_id")
     private Long ownerId;
+    @Column(name = "current_round")
+    private Integer currentRound;
+    @Column(name = "total_rounds")
+    private Integer totalRounds;
     @Version
     private int version;
     @Column(name = "created_at")

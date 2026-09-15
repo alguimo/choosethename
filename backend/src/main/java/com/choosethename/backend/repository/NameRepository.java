@@ -12,8 +12,6 @@ public interface NameRepository extends JpaRepository<NameEntity, Long> {
 
     List<NameEntity> findByListId(Long listId);
 
-    List<NameEntity> findByListIdAndUserIdAndNormalizedNameIn(Long listId, Long userId, List<String> normalizedNames);
-
     boolean existsByListIdAndUserIdAndNormalizedName(Long listId, Long userId, String normalizedName);
 
     long countByListId(Long listId);

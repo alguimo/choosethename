@@ -1,6 +1,7 @@
 package com.choosethename.backend.dto;
 
 import com.choosethename.backend.model.ListEntity;
+import com.choosethename.backend.model.ListPhase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -22,19 +23,24 @@ class ListMapperTest {
         entity.setName("Test List");
         entity.setInvitationCode("CODE01");
         entity.setCodeExpiresAt(Instant.now().plusSeconds(3600));
-        entity.setPhase("ADDITION");
+        entity.setPhase(ListPhase.VOTING);
         entity.setInvitationsOpen(true);
         entity.setOwnerId(10L);
+        entity.setCurrentRound(2);
+        entity.setTotalRounds(3);
 
-        ListResponseDTO dto = mapper.toResponseDTO(entity, List.of("user1", "user2"), "owner1");
+        ListResponseDTO dto = mapper.toResponseDTO(entity, List.of("user1", "user2"), "owner1", List.of("ana", "luis"));
 
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("Test List");
         assertThat(dto.getInvitationCode()).isEqualTo("CODE01");
         assertThat(dto.getCodeExpiresAt()).isEqualTo(entity.getCodeExpiresAt());
-        assertThat(dto.getPhase()).isEqualTo("ADDITION");
+        assertThat(dto.getPhase()).isEqualTo("VOTING");
         assertThat(dto.isInvitationsOpen()).isTrue();
         assertThat(dto.getOwnerUsername()).isEqualTo("owner1");
+        assertThat(dto.getCurrentRound()).isEqualTo(2);
+        assertThat(dto.getTotalRounds()).isEqualTo(3);
+        assertThat(dto.getCurrentPool()).containsExactly("ana", "luis");
         assertThat(dto.getMembers()).containsExactly("user1", "user2");
     }
 }

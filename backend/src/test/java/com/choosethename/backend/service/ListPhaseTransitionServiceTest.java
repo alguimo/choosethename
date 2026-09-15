@@ -4,11 +4,13 @@ import com.choosethename.backend.dto.AddNameRequestDTO;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListMembershipEntity;
+import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.Role;
 import com.choosethename.backend.model.User;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VotingRoundRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,7 @@ class ListPhaseTransitionServiceTest {
     @Autowired private UserRepository userRepository;
     @Autowired private ListRepository listRepository;
     @Autowired private ListMembershipRepository membershipRepository;
+    @Autowired private VotingRoundRepository votingRoundRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private EntityManager entityManager;
 
@@ -43,6 +46,8 @@ class ListPhaseTransitionServiceTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM votes");
+        jdbcTemplate.execute("DELETE FROM voting_rounds");
         jdbcTemplate.execute("DELETE FROM shared_name_pool");
         jdbcTemplate.execute("DELETE FROM names");
 
@@ -50,11 +55,13 @@ class ListPhaseTransitionServiceTest {
         userB = createUser("bob");
 
         list = new ListEntity();
-list.setName("Test List");
+        list.setName("Test List");
         list.setOwnerId(userA.getId());
-        list.setInvitationCode("CODE" + System.nanoTime() % 1000000);
-        list.setPhase("ADDITION");
+        list.setInvitationCode("CODE" + System.nanoTime() % 100000);
+        list.setPhase(ListPhase.ADDITION);
         list.setInvitationsOpen(true);
+        list.setCurrentRound(1);
+        list.setTotalRounds(1);
         list.setCodeExpiresAt(Instant.now().plusSeconds(48 * 3600));
         list.setCreatedAt(Instant.now());
         listRepository.save(list);
@@ -73,7 +80,7 @@ list.setName("Test List");
         nameService.finishAddition(list.getId(), userB.getId());
 
         ListEntity updated = reloadList();
-        assertThat(updated.getPhase()).isEqualTo("SELECTION");
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.SELECTION);
         assertThat(updated.getVersion()).isGreaterThan(0);
         assertThat(updated.isInvitationsOpen()).isFalse();
     }
@@ -86,7 +93,7 @@ list.setName("Test List");
         nameService.finishAddition(list.getId(), userA.getId());
 
         ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
-        assertThat(updated.getPhase()).isEqualTo("ADDITION");
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.ADDITION);
         assertThat(updated.isInvitationsOpen()).isTrue();
     }
 
@@ -103,7 +110,7 @@ list.setName("Test List");
         nameService.finishAddition(list.getId(), userB.getId());
 
         ListEntity after = reloadList();
-        assertThat(after.getPhase()).isEqualTo("SELECTION");
+        assertThat(after.getPhase()).isEqualTo(ListPhase.SELECTION);
         assertThat(after.isInvitationsOpen()).isFalse();
     }
 
@@ -119,33 +126,36 @@ list.setName("Test List");
                 .hasMessage("At least one name must be provided to proceed to the selection phase.");
 
         ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
-        assertThat(updated.getPhase()).isEqualTo("ADDITION");
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.ADDITION);
     }
 
     @Test
     @DisplayName("Should transition SELECTION to VOTING when both participants complete selection")
     void shouldTransitionToVotingWhenBothCompleted() {
-        list.setPhase("SELECTION");
+        list.setPhase(ListPhase.SELECTION);
         listRepository.save(list);
 
         transitionService.completeSelection(list.getId(), userA.getId());
         transitionService.completeSelection(list.getId(), userB.getId());
 
         ListEntity updated = reloadList();
-        assertThat(updated.getPhase()).isEqualTo("VOTING");
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.VOTING);
+        assertThat(updated.getCurrentRound()).isEqualTo(1);
+        assertThat(updated.getTotalRounds()).isEqualTo(2);
         assertThat(updated.getVersion()).isGreaterThan(0);
+        assertThat(votingRoundRepository.findByListIdAndRoundNumber(list.getId(), 1)).isPresent();
     }
 
     @Test
     @DisplayName("Should not transition SELECTION to VOTING when only one completed")
     void shouldNotTransitionToVotingWhenOnlyOneCompleted() {
-        list.setPhase("SELECTION");
+        list.setPhase(ListPhase.SELECTION);
         listRepository.save(list);
 
         transitionService.completeSelection(list.getId(), userA.getId());
 
         ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
-        assertThat(updated.getPhase()).isEqualTo("SELECTION");
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.SELECTION);
     }
 
     @Test
@@ -159,7 +169,7 @@ list.setName("Test List");
         transitionService.expireStaleAdditionLists();
 
         ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
-        assertThat(updated.getPhase()).isEqualTo("EXPIRED");
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.EXPIRED);
     }
 
     @Test
@@ -168,7 +178,32 @@ list.setName("Test List");
         transitionService.expireStaleAdditionLists();
 
         ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
-        assertThat(updated.getPhase()).isEqualTo("ADDITION");
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.ADDITION);
+    }
+
+    @Test
+    @DisplayName("Should expire VOTING list older than 48 hours")
+    void shouldExpireStaleVotingList() {
+        list.setPhase(ListPhase.VOTING);
+        list.setCreatedAt(Instant.now().minus(49, ChronoUnit.HOURS));
+        listRepository.save(list);
+
+        transitionService.expireStaleVotingLists();
+
+        ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.EXPIRED);
+    }
+
+    @Test
+    @DisplayName("Should not expire VOTING list younger than 48 hours")
+    void shouldNotExpireYoungVotingList() {
+        list.setPhase(ListPhase.VOTING);
+        listRepository.save(list);
+
+        transitionService.expireStaleVotingLists();
+
+        ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.VOTING);
     }
 
     private User createUser(String prefix) {

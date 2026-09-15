@@ -15,5 +15,8 @@ public class ListResponseDTO {
     private String phase;
     private boolean invitationsOpen;
     private String ownerUsername;
+    private int currentRound;
+    private int totalRounds;
+    private List<String> currentPool;
     private List<String> members;
 }

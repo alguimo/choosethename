@@ -10,6 +10,7 @@ import com.choosethename.backend.model.User;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VotingRoundRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +48,7 @@ class ListServiceJoinTest {
     @Mock private ListMembershipRepository membershipRepository;
     @Mock private ListMapper listMapper;
     @Mock private UserRepository userRepository;
+    @Mock private VotingRoundRepository votingRoundRepository;
     @InjectMocks private ListService listService;
 
     private ListEntity activeList() {
@@ -59,10 +61,10 @@ class ListServiceJoinTest {
 
     private void stubJoinEnvironment() {
         when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
-        when(listRepository.findByInvitationCodeIgnoreCase(anyString())).thenReturn(Optional.of(activeList()));
+        when(listRepository.findByInvitationCodeForUpdate(anyString())).thenReturn(Optional.of(activeList()));
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(new User()));
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
                 .thenReturn(new ListResponseDTO());
     }
 
@@ -93,7 +95,7 @@ class ListServiceJoinTest {
     @DisplayName("FR-6: Reject non-existent invitation code (404)")
     void shouldThrowNotFoundForNonExistentCode() {
         when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
-        when(listRepository.findByInvitationCodeIgnoreCase(CODE)).thenReturn(Optional.empty());
+        when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> listService.joinList(USER_ID, CODE))
                 .isInstanceOf(ListNotFoundException.class);
@@ -105,7 +107,7 @@ class ListServiceJoinTest {
         when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         ListEntity expired = activeList();
         expired.setCodeExpiresAt(Instant.now().minusSeconds(60));
-        when(listRepository.findByInvitationCodeIgnoreCase(CODE)).thenReturn(Optional.of(expired));
+        when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(expired));
 
         assertThatThrownBy(() -> listService.joinList(USER_ID, CODE))
                 .isInstanceOf(ListOperationException.class)
@@ -118,7 +120,7 @@ class ListServiceJoinTest {
         when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         ListEntity closed = activeList();
         closed.setInvitationsOpen(false);
-        when(listRepository.findByInvitationCodeIgnoreCase(CODE)).thenReturn(Optional.of(closed));
+        when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(closed));
 
         assertThatThrownBy(() -> listService.joinList(USER_ID, CODE))
                 .isInstanceOf(ListOperationException.class)
@@ -129,7 +131,7 @@ class ListServiceJoinTest {
     @DisplayName("FR-8: Reject joining a list the user already belongs to (400)")
     void shouldRejectDuplicateMembership() {
         when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
-        when(listRepository.findByInvitationCodeIgnoreCase(CODE)).thenReturn(Optional.of(activeList()));
+        when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(activeList()));
         when(membershipRepository.findByListIdAndUserId(LIST_ID, USER_ID))
                 .thenReturn(Optional.of(new ListMembershipEntity()));
 
@@ -153,7 +155,7 @@ class ListServiceJoinTest {
     @DisplayName("FR-10: Reject join when list already has 5 members (400)")
     void shouldRejectWhenListIsFull() {
         when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
-        when(listRepository.findByInvitationCodeIgnoreCase(CODE)).thenReturn(Optional.of(activeList()));
+        when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(activeList()));
         when(membershipRepository.countByListId(LIST_ID)).thenReturn(5L);
 
         assertThatThrownBy(() -> listService.joinList(USER_ID, CODE))
@@ -165,11 +167,11 @@ class ListServiceJoinTest {
     @DisplayName("FR-11: Joining the 5th member auto-closes invitations")
     void shouldAutoCloseInvitationsAtFiveMembers() {
         when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
-        when(listRepository.findByInvitationCodeIgnoreCase(CODE)).thenReturn(Optional.of(activeList()));
+        when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(activeList()));
         when(membershipRepository.countByListId(LIST_ID)).thenReturn(4L);
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(new User()));
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
                 .thenReturn(new ListResponseDTO());
 
         listService.joinList(USER_ID, CODE);

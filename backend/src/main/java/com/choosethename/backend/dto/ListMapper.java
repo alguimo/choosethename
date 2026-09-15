@@ -9,5 +9,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ListMapper {
     @Mapping(target = "members", source = "members")
-    ListResponseDTO toResponseDTO(ListEntity entity, List<String> members, String ownerUsername);
+    @Mapping(target = "currentRound", source = "entity.currentRound")
+    @Mapping(target = "totalRounds", source = "entity.totalRounds")
+    @Mapping(target = "currentPool", source = "currentPool")
+    ListResponseDTO toResponseDTO(ListEntity entity, List<String> members, String ownerUsername, List<String> currentPool);
 }

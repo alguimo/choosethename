@@ -2,21 +2,25 @@ package com.choosethename.backend.service;
 
 import com.choosethename.backend.dto.ListMapper;
 import com.choosethename.backend.dto.ListResponseDTO;
+import com.choosethename.backend.dto.VoteJsonCodec;
 import com.choosethename.backend.exception.ListAccessDeniedException;
 import com.choosethename.backend.exception.ListNotFoundException;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListMembershipEntity;
+import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.User;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VotingRoundRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -26,13 +30,15 @@ public class ListService {
     private static final int CODE_VALIDITY_SECONDS = 48 * 3600;
     private static final int MAX_MEMBERS = 5;
     private static final String CODE_PATTERN = "^[A-Za-z0-9]{6}$";
-    private static final List<String> ACTIVE_PHASES = List.of("ADDITION", "SELECTION", "VOTING");
+    private static final List<ListPhase> ACTIVE_PHASES =
+            List.of(ListPhase.ADDITION, ListPhase.SELECTION, ListPhase.VOTING);
 
     private final ListRepository listRepository;
     private final ListMembershipRepository membershipRepository;
     private final InvitationCodeGenerator codeGenerator;
     private final ListMapper listMapper;
     private final UserRepository userRepository;
+    private final VotingRoundRepository votingRoundRepository;
 
     @Transactional
     public ListResponseDTO createList(String name, Long ownerId) {
@@ -46,8 +52,10 @@ public class ListService {
         entity.setOwnerId(ownerId);
         entity.setInvitationCode(codeGenerator.generate());
         entity.setCodeExpiresAt(Instant.now().plusSeconds(CODE_VALIDITY_SECONDS));
-        entity.setPhase("ADDITION");
+        entity.setPhase(ListPhase.ADDITION);
         entity.setInvitationsOpen(true);
+        entity.setCurrentRound(1);
+        entity.setTotalRounds(1);
         entity.setCreatedAt(Instant.now());
 
         ListEntity saved = listRepository.save(entity);
@@ -66,7 +74,7 @@ public class ListService {
         validateCodeFormat(code);
         ensureNoActiveList(userId);
 
-        ListEntity list = listRepository.findByInvitationCodeIgnoreCase(code)
+        ListEntity list = listRepository.findByInvitationCodeForUpdate(code.toUpperCase(Locale.ROOT))
                 .orElseThrow(() -> new ListNotFoundException("List not found for invitation code"));
 
         if (!list.isInvitationsOpen()) {
@@ -137,6 +145,10 @@ public class ListService {
                 .filter(Objects::nonNull)
                 .toList();
         String ownerUsername = userRepository.findById(list.getOwnerId()).map(User::getUsername).orElse(null);
-        return listMapper.toResponseDTO(list, memberNames, ownerUsername);
+        List<String> currentPool = votingRoundRepository
+                .findByListIdAndRoundNumber(list.getId(), list.getCurrentRound())
+                .map(round -> VoteJsonCodec.decode(round.getPoolRankings()))
+                .orElse(List.of());
+        return listMapper.toResponseDTO(list, memberNames, ownerUsername, currentPool);
     }
 }
