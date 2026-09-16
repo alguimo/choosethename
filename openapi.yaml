@@ -1,0 +1,593 @@
+openapi: 3.0.3
+info:
+  title: Choose The Name API
+  description: |
+    Collaborative API to help groups of people choose a name through a structured
+    workflow of suggestions (ADDITION), grouping (SELECTION) and voting rounds (VOTING).
+
+    Authentication is performed with a Bearer JWT. Except for the auth endpoints
+    (`/api/v1/auth/**`), every request requires the `Authorization` header.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new participant
+      description: Creates a new user with role PARTICIPANT and returns its profile.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log in and obtain a JWT
+      description: Authenticates a user and returns an access token.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/lists:
+    post:
+      tags:
+        - Lists
+      summary: Create a new list
+      description: |
+        Creates a list in phase ADDITION. The creator becomes its owner and first member,
+        and a 6-character invitation code is generated (valid for 48 hours).
+      operationId: createList
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateListRequest'
+      responses:
+        '201':
+          description: List created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/lists/join:
+    post:
+      tags:
+        - Lists
+      summary: Join a list with an invitation code
+      description: |
+        Joins a list by its 6-character invitation code. A user can only belong to one
+        active list and a list cannot exceed 5 members; the invitations are closed
+        automatically when the 5th member joins.
+      operationId: joinList
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinListRequest'
+      responses:
+        '200':
+          description: Joined successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/lists/active:
+    get:
+      tags:
+        - Lists
+      summary: Get the current user's active list
+      description: Returns the first active list (ADDITION, SELECTION or VOTING) the user belongs to.
+      operationId: getActiveList
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/lists/{id}/close-invitations:
+    patch:
+      tags:
+        - Lists
+      summary: Close invitations for a list
+      description: Only the list owner can close invitations.
+      operationId: closeInvitations
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: Invitations closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/lists/{id}/names:
+    post:
+      tags:
+        - Names
+      summary: Add names to the list
+      description: |
+        Adds names to the user's private pool during the ADDITION phase. Names are
+        normalized (lowercase, trimmed) and duplicates per user are rejected.
+      operationId: addNames
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddNameRequest'
+      responses:
+        '200':
+          description: Names added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NameResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/lists/{id}/finish-addition:
+    post:
+      tags:
+        - Names
+      summary: Finish the user's ADITION phase
+      description: |
+        Marks the current user's addition as finished. Requires at least one name in the
+        user's private pool. When all members finish, the list transitions to SELECTION.
+      operationId: finishAddition
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: Addition finished
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/lists/{id}/complete-selection:
+    post:
+      tags:
+        - Names
+      summary: Complete the selection phase
+      description: |
+        Marks the user's selection as complete. When all members complete selection,
+        the list transitions to VOTING.
+      operationId: completeSelection
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: Selection completed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/lists/{id}/selection:
+    get:
+      tags:
+        - Selection
+      summary: Get the selection view for the user
+      description: |
+        Returns the names common to all members, the user's faded suggestions and the
+        user's own names, during the SELECTION phase.
+      operationId: getSelection
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: Selection view
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/lists/{id}/selection/adopt:
+    post:
+      tags:
+        - Selection
+      summary: Adopt a faded suggestion
+      description: |
+        Moves a faded suggestion from the user's private pool into the shared name pool
+        during the SELECTION phase.
+      operationId: adoptFadedName
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptNameRequest'
+      responses:
+        '200':
+          description: Name adopted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/lists/{id}/vote:
+    post:
+      tags:
+        - Voting
+      summary: Submit a vote for a round
+      description: |
+        Submits a ranked vote for the current round using Borda scoring, during the
+        VOTING phase. The last round's votes determine the final result.
+      operationId: submitVote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteRequest'
+      responses:
+        '200':
+          description: Vote submitted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/lists/{id}/results:
+    get:
+      tags:
+        - Voting
+      summary: Get the final results
+      description: |
+        Returns the ranked results once the list is COMPLETED.
+      operationId: getResults
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: Final results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT obtained from POST /api/v1/auth/login
+  parameters:
+    ListId:
+      name: id
+      in: path
+      required: true
+      description: ID of the list
+      schema:
+        type: integer
+        format: int64
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Desired username (must be unique)
+        password:
+          type: string
+          format: password
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - PARTICIPANT
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+    CreateListRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: List name
+    JoinListRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          pattern: '^[A-Za-z0-9]{6}$'
+          description: 6-character invitation code (case-insensitive)
+    ListResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        invitationCode:
+          type: string
+        codeExpiresAt:
+          type: string
+          format: date-time
+        phase:
+          type: string
+          enum:
+            - ADDITION
+            - SELECTION
+            - VOTING
+            - COMPLETED
+            - EXPIRED
+        invitationsOpen:
+          type: boolean
+        ownerUsername:
+          type: string
+        currentRound:
+          type: integer
+          format: int32
+        totalRounds:
+          type: integer
+          format: int32
+        currentPool:
+          type: array
+          items:
+            type: string
+        members:
+          type: array
+          items:
+            type: string
+    AddNameRequest:
+      type: object
+      required:
+        - names
+      properties:
+        names:
+          type: array
+          minItems: 1
+          items:
+            type: string
+    NameEntry:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Original name as submitted
+        normalizedName:
+          type: string
+          description: Lowercase, trimmed form used for matching
+    NameResponse:
+      type: object
+      properties:
+        names:
+          type: array
+          items:
+            $ref: '#/components/schemas/NameEntry'
+    AdoptNameRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Faded suggestion to adopt (matched case-insensitively)
+    SelectionResponse:
+      type: object
+      properties:
+        commonNames:
+          type: array
+          items:
+            $ref: '#/components/schemas/NameEntry'
+        fadedSuggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/NameEntry'
+        myNames:
+          type: array
+          items:
+            $ref: '#/components/schemas/NameEntry'
+    VoteRequest:
+      type: object
+      required:
+        - roundNumber
+        - rankings
+      properties:
+        roundNumber:
+          type: integer
+          format: int32
+          description: Current round being voted on (starts at 1)
+        rankings:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: Names ranked from most to least preferred
+    ResultEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          format: int32
+        name:
+          type: string
+        score:
+          type: integer
+          format: int32
+    ResultsResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultEntry'
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+  responses:
+    BadRequest:
+      description: Invalid or null request body, or a business rule was violated (e.g. closed invitations, full list)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing, invalid or expired JWT
+    Forbidden:
+      description: The user is not allowed to perform this action (e.g. not the list owner)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: List or user not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflict with the current state (e.g. username already exists, stale vote, results not ready)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Semantic validation error (e.g. duplicate or blank name)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
