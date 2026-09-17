@@ -7,8 +7,9 @@ import {
   input,
   output,
   signal,
+  forwardRef,
 } from '@angular/core';
-
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { UiIconButtonComponent } from '../../atoms/icon-button/icon-button.component';
 import { UiInputFieldComponent } from '../../atoms/input-field/input-field.component';
 
@@ -18,17 +19,24 @@ const SUBMIT_LOCK_MS = 300;
   selector: 'ui-name-input-row',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [UiInputFieldComponent, UiIconButtonComponent],
+  imports: [UiInputFieldComponent, UiIconButtonComponent, FormsModule],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => UiNameInputRowComponent),
+      multi: true
+    }
+  ],
   template: `
     <div class="ui-name-input-row">
       <ui-input-field
         class="ui-name-input-row__field"
         [label]="label()"
         [placeholder]="placeholder()"
-        [value]="currentValue()"
+        [ngModel]="currentValue()"
+        (ngModelChange)="onValueChanged($event)"
         [disabled]="disabled() || submitting()"
         [maxLength]="maxLength()"
-        (valueChanged)="onValueChanged($event)"
         (submitted)="onSubmit()"
       ></ui-input-field>
       <ui-icon-button
@@ -64,10 +72,9 @@ const SUBMIT_LOCK_MS = 300;
     `,
   ],
 })
-export class UiNameInputRowComponent {
+export class UiNameInputRowComponent implements ControlValueAccessor {
   readonly label = input('');
   readonly placeholder = input('');
-  readonly value = input('');
   readonly disabled = input<boolean>(false);
   readonly maxLength = input<number>();
   readonly nameSubmitted = output<string>();
@@ -77,7 +84,7 @@ export class UiNameInputRowComponent {
   private readonly destroyRef = inject(DestroyRef);
   private submitTimer: ReturnType<typeof setTimeout> | undefined;
 
-  readonly currentValue = computed(() => this.typedValue() || this.value());
+  readonly currentValue = computed(() => this.typedValue());
 
   constructor() {
     this.destroyRef.onDestroy(() => {
@@ -89,6 +96,8 @@ export class UiNameInputRowComponent {
 
   onValueChanged(value: string): void {
     this.typedValue.set(value);
+    this.onChange(value);
+    this.onTouched();
   }
 
   onSubmit(): void {
@@ -103,10 +112,26 @@ export class UiNameInputRowComponent {
 
     this.nameSubmitted.emit(value);
     this.typedValue.set('');
+    this.onChange('');
     this.submitting.set(true);
     this.submitTimer = setTimeout(() => {
       this.submitting.set(false);
       this.submitTimer = undefined;
     }, SUBMIT_LOCK_MS);
+  }
+
+  onChange: (value: string) => void = () => {};
+  onTouched: () => void = () => {};
+
+  writeValue(value: string): void {
+    this.typedValue.set(value);
+  }
+
+  registerOnChange(fn: (value: string) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
   }
 }
