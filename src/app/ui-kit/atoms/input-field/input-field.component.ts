@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ChangeDetectorRef, inject, input, output, forwardRef } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
   selector: 'ui-input-field',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => UiInputFieldComponent),
+      multi: true
+    }
+  ],
   template: `
     <div class="ui-input-field">
       @if (label()) {
@@ -14,12 +22,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
         class="ui-input-field__control"
         [class.ui-input-field__control--error]="error()"
         [placeholder]="placeholder()"
-        [value]="value()"
-        [disabled]="disabled()"
+        [type]="type()"
+        [value]="value"
+        [disabled]="disabled() || isDisabled"
         [attr.maxlength]="maxLength() ?? null"
         [attr.aria-invalid]="error() ? 'true' : null"
         [attr.aria-describedby]="error() ? errorId : null"
         (input)="onInput($event)"
+        (blur)="onTouched()"
         (keydown.enter)="onSubmit($event)"
       />
       @if (error()) {
@@ -94,34 +104,54 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     `,
   ],
 })
-export class UiInputFieldComponent {
+export class UiInputFieldComponent implements ControlValueAccessor {
   private static readonly baseId = 'ui-input-field';
-
   private static instanceCounter = 0;
-
   private readonly uid = ++UiInputFieldComponent.instanceCounter;
-
   readonly inputId = `${UiInputFieldComponent.baseId}-${this.uid}`;
-
   readonly errorId = `${UiInputFieldComponent.baseId}-error-${this.uid}`;
 
   readonly label = input('');
   readonly placeholder = input('');
-  readonly value = input('');
+  readonly type = input<'text' | 'password'>('text');
   readonly error = input('');
   readonly disabled = input<boolean>(false);
   readonly maxLength = input<number>();
-  readonly valueChanged = output<string>();
   readonly submitted = output<void>();
 
+  private readonly cdr = inject(ChangeDetectorRef);
+  value = '';
+  isDisabled: boolean = false;
+
+  onChange: (value: string) => void = () => {};
+  onTouched: () => void = () => {};
+
   onInput(event: Event): void {
-    if (!this.disabled()) {
-      this.valueChanged.emit((event.target as HTMLInputElement).value);
-    }
+    const value = (event.target as HTMLInputElement).value;
+    this.value = value;
+    this.onChange(value);
   }
 
   onSubmit(event: Event): void {
     event.preventDefault();
     this.submitted.emit();
+  }
+
+  writeValue(value: string): void {
+    this.value = value;
+    this.cdr.markForCheck();
+  }
+
+  registerOnChange(fn: (value: string) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.isDisabled = isDisabled;
+    this.cdr.markForCheck();
   }
 }
