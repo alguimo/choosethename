@@ -1,7 +1,13 @@
+# Task Plan — Consolidated Development Planning
+
+> Consolidated from the former `docs/plan.md` during Spec 007 (repository restructuring). Path references were updated to the new `src/` + `tests/` layout; content is unchanged.
+
+---
+
 # Development Plan: Backend Lists and Sharing (Spec 002)
 
 ## 1. Structure & Architecture
-- **Root**: Spring Boot backend located at `backend/src/main/java/com/choosethename/backend`.
+- **Root**: Spring Boot backend located at `src/backend/com/choosethename/backend`.
 - **Packages**:
   - `api`: `ListController`
   - `dto`: `CreateListRequestDTO`, `JoinListRequestDTO`, `ListResponseDTO`, `ListMapper`
@@ -9,8 +15,8 @@
   - `repository`: `ListRepository`, `ListMembershipRepository`
   - `service`: `ListService`, `InvitationCodeGenerator`
   - `exception`: `GlobalExceptionHandler` mapping domain exceptions to HTTP statuses
-- **Database Migrations**: `backend/src/main/resources/db/migration/V2__create_lists_tables.sql`
-- **Tests**: `backend/src/test/java/com/choosethename/backend`
+- **Database Migrations**: `src/backend/resources/db/migration/V2__create_lists_tables.sql`
+- **Tests**: `tests/backend/com/choosethename/backend`
 
 ---
 
@@ -51,7 +57,7 @@
 # Development Plan: Backend Names Addition and Selection (Spec 003)
 
 ## 1. Structure & Architecture
-- **Root**: Same Spring Boot backend at `backend/src/main/java/com/choosethename/backend`.
+- **Root**: Same Spring Boot backend at `src/backend/com/choosethename/backend`.
 - **Packages**:
   - `model`: `NameEntity`, `SharedNamePoolEntity`
   - `dto`: `AddNameRequestDTO`, `NameResponseDTO`, `SelectionResponseDTO`
@@ -59,8 +65,8 @@
   - `service`: `NameService`, `NameNormalizer` (normalization utility), `ListPhaseTransitionService` (transitions + 48h timeout)
   - `exception`: `EmptyAdditionException`, `DuplicateNameException`, `ConcurrentTransitionException` handled by `GlobalExceptionHandler`
   - `config`: scheduled job for the 48-hour timeout check
-- **Database Migrations**: `backend/src/main/resources/db/migration/V3__create_names_tables.sql`
-- **Tests**: `backend/src/test/java/com/choosethename/backend`
+- **Database Migrations**: `src/backend/resources/db/migration/V3__create_names_tables.sql`
+- **Tests**: `tests/backend/com/choosethename/backend`
 
 ---
 
@@ -96,7 +102,7 @@
 # Development Plan: Backend Voting Rounds (Spec 004)
 
 ## 1. Structure & Architecture
-- **Root**: Same Spring Boot backend at `backend/src/main/java/com/choosethename/backend`.
+- **Root**: Same Spring Boot backend at `src/backend/com/choosethename/backend`.
 - **Packages**:
   - `model`: `VotingRoundEntity`, `VoteEntity`
   - `dto`: `VoteRequestDTO`, `ResultsResponseDTO`, `VoteMapper`, `VotingRoundMapper`
@@ -104,7 +110,7 @@
   - `service`: `VotingService` (submit, consolidation, round transitions), `RankingService` (Borda scoring + elimination + tie-breaks), extended `ListPhaseTransitionService` (48h VOTING→EXPIRED)
   - `controller`: `VotingController` (`POST /api/v1/lists/{id}/vote`, `GET /api/v1/lists/{id}/results`)
   - `config`: scheduled job extended for the VOTING timeout
-- **Database Migrations**: `backend/src/main/resources/db/migration/V6__create_voting_tables.sql`
+- **Database Migrations**: `src/backend/resources/db/migration/V6__create_voting_tables.sql`
 - **Approved decisions (defaults closed)**:
   - **Scoring**: Borda count per round: points = `pool_size − rank_position`; consolidated score = sum over all voters of the list (up to 5).
   - **Pool**: voted names = `shared_name_pool` entries; the >15/<=15 branch is evaluated once at VOTING entry.
@@ -167,7 +173,7 @@
   - **Done when**: All 004 test scenarios pass 100% against a real HTTP endpoint stack (`RANDOM_PORT`, H2, Flyway).
 
 - [x] **Task 10: Full Verification (~20 min)**
-  - **Description**: Run the entire backend suite (`./mvnw test`), frontend suite (`npm test`, `npm run lint`) and `./mvnw spotless:apply`; confirm zero warnings and 100% green.
+  - **Description**: Run the entire backend suite (`mvn test`), frontend suite (`npm test`, `npm run lint`) and `./mvnw spotless:apply`; confirm zero warnings and 100% green.
   - **RF**: Constitution P3.2; AGENTS.md finishing rules.
   - **Done when**: Backend and frontend test suites pass 100%; linters and formatters report zero warnings; no spec contradiction remains between 002/003/004.
 
@@ -178,20 +184,20 @@
 These two specs are developed **in parallel**: the `ui-kit` component inventory (Spec 006) is driven by the concrete needs of the application flows (Spec 005). Each UI Kit component is built to satisfy a specific FR from Spec 005, so it is test-first and consumed immediately by the features that require it.
 
 ## 1. Structure & Architecture
-- **Workspace**: The frontend lives at the project root (single Angular 17 workspace). The UI Kit is a folder `src/app/ui-kit` inside the same project (extractable in the future; not a separate library package for now — approved decision).
-- **UI Kit (`src/app/ui-kit`) — Atomic Design (Spec 006)**:
+- **Workspace**: The frontend lives at the project root (single Angular 17 workspace). The UI Kit is a folder `src/frontend/app/ui-kit` inside the same project (extractable in the future; not a separate library package for now — approved decision).
+- **UI Kit (`src/frontend/app/ui-kit`) — Atomic Design (Spec 006)**:
   - **Atoms**: `button`, `input-field`, `icon-button`, `badge`, `validation-message`.
   - **Molecules**: `name-input-row`, `list-card`, `phase-indicator`, `round-indicator`.
   - **Organisms**: `draggable-ranking-list` (Angular CDK), `modal`.
   - **tokens/**: `_variables.scss` with CSS custom properties (design tokens, `--ui-*`).
-- **Features (`src/app/features`) — business flows (Spec 005)**:
+- **Features (`src/frontend/app/features`) — business flows (Spec 005)**:
   - `auth/`: login screen, JWT storage, HTTP interceptor (auto-attach `Authorization: Bearer`).
   - `dashboard/`: active-list card / empty state, create-list modal, join-list modal, 5-minute refresh.
   - `suggestion/`: local-first name input, validation (chars + duplicates), finish-addition sync.
   - `selection/`: selection view (common / faded / own names), adopt flow, complete-selection.
   - `voting/`: round-based drag-and-drop ranking, submit vote, stale/invalid handling.
   - `results/`: final results screen.
-- **Services (`src/app/services`)**: `api.service` (HTTP wrappers for every `openapi.yaml` operation), `local-storage.service` (namespaced per-list buffer, `list_{id}_suggestions`, `list_{id}_vote_round_{n}`), `auth.service` (session, re-auth at phase completion).
+- **Services (`src/frontend/app/services`)**: `api.service` (HTTP wrappers for every `openapi.yaml` operation), `local-storage.service` (namespaced per-list buffer, `list_{id}_suggestions`, `list_{id}_vote_round_{n}`), `auth.service` (session, re-auth at phase completion).
 
 ## 2. Data Model (API Contract)
 - Models mirror `openapi.yaml` DTOs directly; no frontend-side normalization (backend is single source of truth per 003 NFR-1).
@@ -207,7 +213,7 @@ These two specs are developed **in parallel**: the `ui-kit` component inventory 
 | Decision | Rationale | Discarded Alternative |
 | :--- | :--- | :--- |
 | **Angular Material + CDK** | Official Angular ecosystem, strong a11y (WCAG 2.1 AA) and behavioral primitives (drag-drop, overlay, focus trap) with zero custom JS. | **ng-zorro**: heavy, non-native to Angular, extra theming/config cost for the same behaviors. |
-| **UI Kit inside the same project (`src/app/ui-kit`)** | No build complexity now; the kit stays decoupled (no app imports) so it can be extracted into an npm package later. | **Separate Angular Workspace library (`ng-packagr`)**: adds release/versioning overhead that is not needed today. |
+| **UI Kit inside the same project (`src/frontend/app/ui-kit`)** | No build complexity now; the kit stays decoupled (no app imports) so it can be extracted into an npm package later. | **Separate Angular Workspace library (`ng-packagr`)**: adds release/versioning overhead that is not needed today. |
 | **Atomic Design (atoms→molecules→organisms)** | Max reuse: page flows compose molecules/organisms, atoms stay stateless and themeable. | **Monolithic page components**: duplicated markup, hard to test, no reuse. |
 | **localStorage as local buffer, single sync at phase end** | Offline resilience + delayed auth (005 FR-4); full state sent once on "Terminar Fase" / "Enviar voto". | **WebSockets realtime sync**: out of scope, infra complexity, unnecessary for MVP. |
 | **Dedicated `local-storage.service` namespaced per list/round** | Isolates cache concerns, trivial clear-on-success / retain-on-error. | **NgRx/global store**: overkill for the buffered local state we actually manage. |
