@@ -1,1 +1,0 @@
-ALTER TABLE list_memberships ADD COLUMN selection_completed_at TIMESTAMP WITH TIME ZONE;
