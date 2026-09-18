@@ -6,9 +6,9 @@
     "types": []
   },
   "files": [
-    "src/main.ts"
+    "src/frontend/main.ts"
   ],
   "include": [
-    "src/**/*.d.ts"
+    "src/frontend/**/*.d.ts"
   ]
 }
