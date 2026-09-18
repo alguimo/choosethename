@@ -1,27 +1,43 @@
 # Choosethename
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
+Collaborative web application that helps groups choose a name through a structured workflow of **suggestions, selection, voting rounds, and results**. A group forms a *list* with an invitation code, members propose *names*, common and faded suggestions are matched, participants vote through elimination rounds, and the system exposes the final ranked result.
+
+## Architecture
+
+Two strictly decoupled layers communicating over stateless JSON REST contracts (`specs/openapi.yaml`):
+
+- **Backend** (`src/backend`, `tests/backend`): Spring Boot 3.x (Java 17), MapStruct, Flyway migrations, BCrypt/JWT security.
+- **Frontend** (`src/frontend`, `tests/frontend`): Angular 17 (standalone components), Angular Material + CDK, RxJS.
+
+Specifications and plans follow Spec-Driven Development and live under `specs/` (see `specs/00-constitution.md`, `specs/01-system-spec.md`, `specs/02-contracts.md`, `specs/03-task-plan.md`).
+
+## Repository layout
+
+```
+specs/            SDD documentation (constitution, system, contracts, plans, openapi.yaml, subsystem specs 001-006)
+src/backend/      Spring Boot production sources (Java + resources + Flyway migrations)
+src/frontend/     Angular application (app/, assets/, index.html, main.ts, styles.scss)
+tests/backend/    Backend unit & integration tests (JUnit) + test resources
+tests/frontend/   Frontend spec files (Karma/Jasmine), mirroring the app tree
+```
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
-
-## Code scaffolding
-
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- Backend: `mvn spring-boot:run` (serves the API on `http://localhost:8080`).
+- Frontend: `npm start` (serves the Angular app on `http://localhost:4200`, proxying `/api` to the backend).
 
 ## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+- Backend: `mvn package`
+- Frontend: `npm run build` (output to `dist/choosethename`)
 
-## Running unit tests
+## Tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+- Backend: `mvn test`
+- Frontend: `npm test`
 
-## Running end-to-end tests
+Run linters/formatters: `mvn spotless:apply` (plugin not yet configured in `pom.xml`) and `npm run lint`.
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+## Database
 
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+A local PostgreSQL (16) is provided via `docker-compose.yml` (or the duplicate at `bdd/docker-compose.yml`). The backend applies schema migrations with Flyway on startup.
