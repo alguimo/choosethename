@@ -99,6 +99,18 @@
   </dependencies>
 
   <build>
+    <sourceDirectory>${project.basedir}/src/backend</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/tests/backend</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>${project.basedir}/src/backend/resources</directory>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/tests/backend/resources</directory>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
