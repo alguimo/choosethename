@@ -92,6 +92,26 @@ describe('UiNameInputRowComponent', () => {
     expect(fixture.componentInstance.currentValue()).toBe('');
   }));
 
+  it('should lock the send button while a submission is in flight', fakeAsync(() => {
+    const sendButton = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+
+    typeIn('Camelot');
+    pressEnter();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.submitting()).toBeTrue();
+    expect((inputElement() as HTMLInputElement).disabled).toBeFalse();
+    expect(sendButton.disabled).toBeTrue();
+
+    tick(300);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.submitting()).toBeFalse();
+    expect(fixture.componentInstance.currentValue()).toBe('');
+    expect((inputElement() as HTMLInputElement).disabled).toBeFalse();
+    expect(sendButton.disabled).toBeFalse();
+  }));
+
   it('should not emit when disabled', () => {
     const spy = jasmine.createSpy('nameSubmitted');
     fixture.componentInstance.nameSubmitted.subscribe(spy);

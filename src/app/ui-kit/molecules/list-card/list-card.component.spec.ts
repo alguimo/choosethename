@@ -65,4 +65,15 @@ describe('UiListCardComponent', () => {
 
     expect(spy).toHaveBeenCalledTimes(1);
   });
+
+  it('should emit clicked and prevent default when activated with the space key', () => {
+    const spy = jasmine.createSpy('clicked');
+    fixture.componentInstance.clicked.subscribe(spy);
+
+    const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    fixture.nativeElement.querySelector('.ui-list-card').dispatchEvent(event);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBeTrue();
+  });
 });

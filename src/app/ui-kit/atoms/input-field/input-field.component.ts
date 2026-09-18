@@ -117,6 +117,7 @@ export class UiInputFieldComponent implements ControlValueAccessor {
   readonly error = input('');
   readonly disabled = input<boolean>(false);
   readonly maxLength = input<number>();
+  readonly valueChanged = output<string>();
   readonly submitted = output<void>();
 
   private readonly cdr = inject(ChangeDetectorRef);
@@ -130,6 +131,7 @@ export class UiInputFieldComponent implements ControlValueAccessor {
     const value = (event.target as HTMLInputElement).value;
     this.value = value;
     this.onChange(value);
+    this.valueChanged.emit(value);
   }
 
   onSubmit(event: Event): void {

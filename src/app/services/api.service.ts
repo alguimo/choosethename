@@ -52,12 +52,12 @@ export class ApiService {
     return this.http.get<SelectionResponse>(`${this.baseUrl}/lists/${listId}/selection`);
   }
 
-  adoptFadedName(listId: string, name: string): Observable<SelectionResponse> {
-    return this.http.post<SelectionResponse>(`${this.baseUrl}/lists/${listId}/selection/adopt`, { name });
+  adoptFadedName(listId: string, name: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/lists/${listId}/selection/adopt`, { name });
   }
 
-  completeSelection(listId: string): Observable<ListResponse> {
-    return this.http.post<ListResponse>(`${this.baseUrl}/lists/${listId}/selection/complete`, {});
+  completeSelection(listId: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/lists/${listId}/complete-selection`, {});
   }
 
   submitVote(listId: string, request: VoteRequest): Observable<ListResponse> {

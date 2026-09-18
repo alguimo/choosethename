@@ -34,7 +34,7 @@ describe('ApiService', () => {
     service.login(credentials).subscribe();
     const req = expectReq('POST', '/api/v1/auth/login');
     expect(req.request.body).toEqual(credentials);
-    req.flush({ token: 'fake-token' });
+    req.flush({ accessToken: 'fake-token', tokenType: 'Bearer' });
   });
 
   it('should POST to /lists', () => {
@@ -46,7 +46,7 @@ describe('ApiService', () => {
   });
 
   it('should POST to /lists/join', () => {
-    const body = { invitationCode: 'ABC123' };
+    const body = { code: 'ABC123' };
     service.joinList(body).subscribe();
     const req = expectReq('POST', '/api/v1/lists/join');
     expect(req.request.body).toEqual(body);
@@ -86,9 +86,9 @@ describe('ApiService', () => {
     expectReq('POST', '/api/v1/lists/1/selection/adopt').flush({});
   });
 
-  it('should POST to /lists/{id}/selection/complete', () => {
+  it('should POST to /lists/{id}/complete-selection', () => {
     service.completeSelection('1').subscribe();
-    expectReq('POST', '/api/v1/lists/1/selection/complete').flush({});
+    expectReq('POST', '/api/v1/lists/1/complete-selection').flush({});
   });
 
   it('should POST to /lists/{id}/vote', () => {

@@ -49,4 +49,21 @@ describe('UiInputFieldComponent', () => {
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
     expect(input.getAttribute('maxlength')).toBe('20');
   });
+
+  it('TS-3: should emit valueChanged on input and submitted on Enter', () => {
+    const valueSpy = jasmine.createSpy('valueChanged');
+    const submittedSpy = jasmine.createSpy('submitted');
+    fixture.componentInstance.valueChanged.subscribe(valueSpy);
+    fixture.componentInstance.submitted.subscribe(submittedSpy);
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.value = 'Morena';
+    input.dispatchEvent(new Event('input'));
+
+    expect(valueSpy).toHaveBeenCalledWith('Morena');
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(submittedSpy).toHaveBeenCalledTimes(1);
+  });
 });

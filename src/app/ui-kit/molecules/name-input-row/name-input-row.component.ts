@@ -35,7 +35,7 @@ const SUBMIT_LOCK_MS = 300;
         [placeholder]="placeholder()"
         [ngModel]="currentValue()"
         (ngModelChange)="onValueChanged($event)"
-        [disabled]="disabled() || submitting()"
+        [disabled]="disabled()"
         [maxLength]="maxLength()"
         (submitted)="onSubmit()"
       ></ui-input-field>
@@ -80,7 +80,7 @@ export class UiNameInputRowComponent implements ControlValueAccessor {
   readonly nameSubmitted = output<string>();
 
   private readonly typedValue = signal('');
-  private readonly submitting = signal(false);
+  readonly submitting = signal(false);
   private readonly destroyRef = inject(DestroyRef);
   private submitTimer: ReturnType<typeof setTimeout> | undefined;
 
