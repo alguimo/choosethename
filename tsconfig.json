@@ -18,6 +18,12 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
+    "baseUrl": ".",
+    "paths": {
+      "@app/*": [
+        "src/frontend/app/*"
+      ]
+    },
     "lib": [
       "ES2022",
       "dom"

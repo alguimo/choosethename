@@ -45,7 +45,8 @@
     },
     {
       "files": [
-        "src/app/ui-kit/**/*.ts"
+        "src/frontend/app/ui-kit/**/*.ts",
+        "tests/frontend/app/ui-kit/**/*.ts"
       ],
       "rules": {
         "@angular-eslint/component-selector": [
