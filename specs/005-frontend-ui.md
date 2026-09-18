@@ -1,7 +1,7 @@
 # Spec 005 — Frontend UI
 
 ## Context & Objectives
-This specification defines the Angular 17 frontend implementation for the Collaborative Name Decider. The frontend is a fully decoupled presentation layer that communicates with the backend exclusively through REST API contracts defined in `openapi.yaml` and Specs 001–004.
+This specification defines the Angular 17 frontend implementation for the Collaborative Name Decider. The frontend is a fully decoupled presentation layer that communicates with the backend exclusively through REST API contracts defined in `specs/openapi.yaml` and Specs 001–004.
 
 The architecture follows a **local-first strategy** during the suggestion and voting phases: all user interactions are buffered locally and synchronized with the backend only when the user explicitly completes a phase. This ensures offline resilience, delayed authentication handling, and a smooth collaborative experience.
 
@@ -105,13 +105,13 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 ---
 
 ## Non-Functional Requirements
-*   **NFR-1 (Architecture)**: Frontend is fully decoupled from the backend. All communication is via REST API contracts defined in `openapi.yaml`. No business logic, data normalization, or phase-transition logic belongs in the frontend.
+*   **NFR-1 (Architecture)**: Frontend is fully decoupled from the backend. All communication is via REST API contracts defined in `specs/openapi.yaml`. No business logic, data normalization, or phase-transition logic belongs in the frontend.
 *   **NFR-2 (Language)**: UI text visible to end users is in Spanish. All code, variable/function names, commit messages, comments, and documentation are in English.
 *   **NFR-3 (State Management)**: Local state during suggestion and voting phases is managed via a dedicated Angular service (`LocalStorageService`) that wraps localStorage operations, namespaced per list ID and phase.
 *   **NFR-4 (Security)**: JWT tokens are stored in localStorage. All API requests include the token via an HTTP interceptor. Tokens are cleared on logout or when the user explicitly logs out.
 *   **NFR-5 (Componentization)**: All reusable UI elements are provided by the `ui-kit` library (atoms, molecules, organisms per Spec 006). The main application contains page-level presentational logic and business services only.
 *   **NFR-6 (Performance)**: The application must load the initial dashboard within 2 seconds on a standard broadband connection.
-*   **NFR-7 (API Alignment)**: Every frontend API call must map directly to an operation defined in `openapi.yaml`. The frontend MUST NOT invent or assume endpoints that do not exist in the contract.
+*   **NFR-7 (API Alignment)**: Every frontend API call must map directly to an operation defined in `specs/openapi.yaml`. The frontend MUST NOT invent or assume endpoints that do not exist in the contract.
 
 ---
 

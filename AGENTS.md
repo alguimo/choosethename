@@ -22,7 +22,7 @@ A collaborative web application designed to help groups of people choose a name 
 - **Language policy**: All code, variable/function naming, commit messages, code comments, documentation, and markdown (`.md`) files must be written strictly in **English**. Only the user interface (UI) text shown to final users will be in **Spanish**.
 
 ## Rules
-- Read `docs/constitution.md` and the active specification file in `specs/` before touching any code or configuration.
+- Read `specs/00-constitution.md` and the active specification file in `specs/` before touching any code or configuration.
 - **Limits**: Do not add external dependencies, libraries, or frameworks in `pom.xml` or `package.json` without asking the user first. In case of any ambiguity in the specification requirements, STOP work immediately and ask for clarification.
 
 ## Upon finishing any task
