@@ -4,7 +4,8 @@ export interface Credentials {
 }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
+  tokenType: string;
 }
 
 export interface CreateListRequest {
@@ -12,7 +13,7 @@ export interface CreateListRequest {
 }
 
 export interface JoinListRequest {
-  invitationCode: string;
+  code: string;
 }
 
 export interface ListMember {
@@ -46,8 +47,7 @@ export interface AddNameRequest {
 export interface SelectionResponse {
   commonNames: NameEntry[];
   fadedSuggestions: NameEntry[];
-  ownNames: NameEntry[];
-  sharedPool: NameEntry[];
+  myNames: NameEntry[];
 }
 
 export interface VoteRequest {

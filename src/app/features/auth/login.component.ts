@@ -32,9 +32,11 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
           <ui-validation-message type="error" [message]="error()!" />
         }
 
-        <ui-button type="submit" [disabled]="loginForm.invalid || loading()">
-          {{ loading() ? 'Entrando...' : 'Entrar' }}
-        </ui-button>
+        <ui-button
+          type="submit"
+          [label]="loading() ? 'Entrando...' : 'Entrar'"
+          [disabled]="loginForm.invalid || loading()"
+        ></ui-button>
       </form>
     </div>
   `,
@@ -64,8 +66,8 @@ export class LoginComponent {
     this.error.set(null);
 
     this.apiService.login(this.loginForm.value).subscribe({
-      next: (res: { token: string }) => {
-        this.authService.setToken(res.token);
+      next: (res) => {
+        this.authService.setToken(res.accessToken);
         this.router.navigate(['/']);
       },
       error: () => {

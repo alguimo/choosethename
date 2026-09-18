@@ -49,4 +49,24 @@ describe('LocalStorageService', () => {
     expect(service.getItem('1', 'vote_round_1')).toBeNull();
     expect(service.getItem<string[]>('2', 'suggestions')).toEqual(['b']);
   });
+
+  it('TS-27: should report unavailable when storage access is blocked at startup', () => {
+    spyOn(localStorage, 'setItem').and.throwError('SecurityError');
+
+    const blocked = new LocalStorageService();
+
+    expect(blocked.isAvailable()).toBeFalse();
+  });
+
+  it('TS-27: should degrade gracefully and continue without persistence when a write fails', () => {
+    expect(service.isAvailable()).toBeTrue();
+
+    spyOn(localStorage, 'setItem').and.throwError('QuotaExceededError');
+
+    expect(() => service.setItem('1', 'suggestions', ['a'])).not.toThrow();
+    expect(service.isAvailable()).toBeFalse();
+    expect(service.getItem('1', 'suggestions')).toBeNull();
+    expect(() => service.removeItem('1', 'suggestions')).not.toThrow();
+    expect(() => service.clearListCache('1')).not.toThrow();
+  });
 });

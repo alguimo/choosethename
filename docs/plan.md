@@ -277,32 +277,32 @@ These two specs are developed **in parallel**: the `ui-kit` component inventory 
   - **RF**: 005 FR-1, FR-2, FR-3.
   - **Done when**: 005 TS-1, TS-2 pass.
 
-- [ ] **Task 9: Dashboard feature (~30 min)**
+- [x] **Task 9: Dashboard feature (~30 min)**
   - **Description**: Compose dashboard from `ui-list-card` / empty state (`ui-button` "Crear lista nueva" + "Unirse con código"), create/join modals using `ui-modal`, 5-minute in-memory cache and re-fetch on visit, reload after phase completion, inline backend error display.
   - **RF**: 005 FR-6..FR-17.
   - **Done when**: 005 TS-3..TS-8, TS-28 pass.
 
-- [ ] **Task 10: Suggestion feature (local-first sync) (~30 min)**
+- [x] **Task 10: Suggestion feature (local-first sync) (~30 min)**
   - **Description**: Compose suggestion panel (`ui-name-input-row`, list with `ui-icon-button` delete, `ui-validation-message`), character validation ([letters/accents, spaces, hyphens]), case/accent-insensitive duplicate check, restore from localStorage on entry, "Terminar Fase" guard (≥1 name), two-step sync (`addNames` → `finishAddition`), clear-on-success / retain-on-error.
   - **RF**: 005 FR-18..FR-26; Edge cases invalid chars, duplicates, empty finish, backend unreachable.
   - **Done when**: 005 TS-9..TS-15 pass.
 
-- [ ] **Task 11: Selection feature (~20 min)**
+- [x] **Task 11: Selection feature (~20 min)**
   - **Description**: Compose selection view (three sections common/faded/own via `ui-list-card` or list rows), adopt faded name (`POST adopt` + refresh), complete-selection with inline errors.
   - **RF**: 005 FR-27..FR-31.
   - **Done when**: 005 TS-16..TS-18 pass.
 
-- [ ] **Task 12: Voting feature (round-based) (~30 min)**
+- [x] **Task 12: Voting feature (round-based) (~30 min)**
   - **Description**: Compose `ui-draggable-ranking-list` + `ui-round-indicator`, restore local ranking per round, discard stale rankings (names not in `currentPool`), submit via `POST vote` (roundNumber + rankings), handle 409 (retain + error), 400/422 (red border + "Voto no válido"), 401 (re-auth modal then retry).
   - **RF**: 005 FR-32..FR-39; Edge cases stale ranking, session expiry.
   - **Done when**: 005 TS-19..TS-23, TS-26, TS-29 pass.
 
-- [ ] **Task 13: Results feature (~15 min)**
+- [x] **Task 13: Results feature (~15 min)**
   - **Description**: Compose results screen from data of `GET results`, "resultados siendo procesados" + retry button on 409, always fresh fetch (no cache).
   - **RF**: 005 FR-40..FR-42.
   - **Done when**: 005 TS-24, TS-25 pass.
 
-- [ ] **Task 14: Full verification (~20 min)**
+- [x] **Task 14: Full verification (~20 min)**
   - **Description**: Run `npm test` and `npm run lint`; verify 100% green and zero warnings; confirm every Spec 005/006 test scenario (TS-1..TS-29 for 005, TS-1..TS-17 for 006) is exercised.
   - **RF**: Constitution P3.2; AGENTS.md finishing rules.
   - **Done when**: Frontend suites pass 100%, zero lint warnings, and each scenario maps to a passing test.

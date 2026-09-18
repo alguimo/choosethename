@@ -110,7 +110,7 @@ export class UiListCardComponent {
     this.memberCount() === 1 ? '1 miembro' : `${this.memberCount()} miembros`,
   );
 
-  onActivate(event?: KeyboardEvent): void {
+  onActivate(event?: Event): void {
     if (event) {
       event.preventDefault();
     }
