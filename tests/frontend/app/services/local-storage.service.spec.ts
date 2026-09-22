@@ -50,6 +50,20 @@ describe('LocalStorageService', () => {
     expect(service.getItem<string[]>('2', 'suggestions')).toEqual(['b']);
   });
 
+  it('FR-65: should clear every list cache entry while keeping unrelated keys', () => {
+    service.setItem('1', 'suggestions', ['a']);
+    service.setItem('1', 'vote_round_1', ['x']);
+    service.setItem('2', 'suggestions', ['b']);
+    localStorage.setItem('auth_token', 'jwt');
+
+    service.clearAllListCaches();
+
+    expect(service.getItem('1', 'suggestions')).toBeNull();
+    expect(service.getItem('1', 'vote_round_1')).toBeNull();
+    expect(service.getItem('2', 'suggestions')).toBeNull();
+    expect(localStorage.getItem('auth_token')).toBe('jwt');
+  });
+
   it('TS-27: should report unavailable when storage access is blocked at startup', () => {
     spyOn(localStorage, 'setItem').and.throwError('SecurityError');
 

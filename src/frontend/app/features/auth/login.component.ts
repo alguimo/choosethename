@@ -14,6 +14,14 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
   template: `
     <div class="login-container">
       <h2>Iniciar Sesión</h2>
+
+      @if (registeredMessage) {
+        <ui-validation-message
+          type="info"
+          message="Cuenta creada correctamente. Inicia sesión."
+        />
+      }
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <ui-input-field
           label="Usuario"
@@ -37,6 +45,12 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
           [label]="loading() ? 'Entrando...' : 'Entrar'"
           [disabled]="loginForm.invalid || loading()"
         ></ui-button>
+
+        <ui-button
+          variant="secondary"
+          label="Crear cuenta"
+          (clicked)="goToRegister()"
+        ></ui-button>
       </form>
     </div>
   `,
@@ -58,6 +72,12 @@ export class LoginComponent {
 
   loading = signal(false);
   error = signal<string | null>(null);
+  registeredMessage = false;
+
+  constructor() {
+    const navigation = this.router.getCurrentNavigation();
+    this.registeredMessage = navigation?.extras?.state?.['registered'] === true;
+  }
 
   onSubmit(): void {
     if (this.loginForm.invalid) return;
@@ -75,5 +95,9 @@ export class LoginComponent {
         this.error.set('Usuario o contraseña incorrectos');
       }
     });
+  }
+
+  goToRegister(): void {
+    this.router.navigate(['/register']);
   }
 }

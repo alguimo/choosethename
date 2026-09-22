@@ -57,10 +57,17 @@ public class RestAssuredSystemClient implements SystemClient {
     }
 
     @Override
-    public Response getActiveList(String token) {
+    public Response getMyLists(String token) {
         return given()
                 .header("Authorization", "Bearer " + token)
-                .get("/api/v1/lists/active");
+                .get("/api/v1/lists");
+    }
+
+    @Override
+    public Response getListById(String token, int listId) {
+        return given()
+                .header("Authorization", "Bearer " + token)
+                .get("/api/v1/lists/{id}", listId);
     }
 
     @Override

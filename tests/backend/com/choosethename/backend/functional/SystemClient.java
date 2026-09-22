@@ -11,7 +11,8 @@ public interface SystemClient {
 
     Response createList(String token, String name);
     Response joinList(String token, String code);
-    Response getActiveList(String token);
+    Response getMyLists(String token);
+    Response getListById(String token, int listId);
     Response closeInvitations(String token, int listId);
 
     Response addNames(String token, int listId, List<String> names);

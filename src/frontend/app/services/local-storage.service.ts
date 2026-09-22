@@ -4,6 +4,8 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root'
 })
 export class LocalStorageService {
+  private static readonly LIST_PREFIX = 'list_';
+
   readonly isAvailable = signal(this.probeAvailability());
 
   setItem<T>(listId: string, key: string, value: T): void {
@@ -49,8 +51,21 @@ export class LocalStorageService {
     }
   }
 
+  clearAllListCaches(): void {
+    if (!this.isAvailable()) return;
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(LocalStorageService.LIST_PREFIX)) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch {
+      this.isAvailable.set(false);
+    }
+  }
+
   private getPrefix(listId: string): string {
-    return `list_${listId}_`;
+    return `${LocalStorageService.LIST_PREFIX}${listId}_`;
   }
 
   private probeAvailability(): boolean {

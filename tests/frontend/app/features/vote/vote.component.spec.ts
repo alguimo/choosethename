@@ -38,8 +38,8 @@ describe('VoteComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('ApiService', ['getActiveList', 'submitVote', 'login']);
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+    apiSpy = jasmine.createSpyObj('ApiService', ['getListById', 'submitVote', 'login']);
+    apiSpy.getListById.and.returnValue(of(LIST));
     apiSpy.submitVote.and.returnValue(of(LIST));
     apiSpy.login.and.returnValue(of({ accessToken: 'new-token', tokenType: 'Bearer' }));
     authSpy = jasmine.createSpyObj('AuthService', ['getToken', 'setToken', 'logout']);
@@ -94,7 +94,7 @@ describe('VoteComponent', () => {
   it('TS-19: should load the pool and display the round indicator', () => {
     fixture.detectChanges();
 
-    expect(apiSpy.getActiveList).toHaveBeenCalled();
+    expect(apiSpy.getListById).toHaveBeenCalled();
     expect(component.roundNumber()).toBe(1);
     expect(component.totalRounds()).toBe(3);
     expect(component.pool()).toEqual(['A', 'B', 'C']);
@@ -103,7 +103,7 @@ describe('VoteComponent', () => {
   });
 
   it('FR-47: should show an error when the voting view cannot be loaded', () => {
-    apiSpy.getActiveList.and.returnValue(apiError(500));
+    apiSpy.getListById.and.returnValue(apiError(500));
 
     fixture.detectChanges();
 

@@ -23,8 +23,7 @@ const LIST: ListResponse = {
   members: [{ id: 'u1', username: 'alvaro' }],
 };
 
-const NOT_FOUND = () =>
-  throwError(() => new HttpErrorResponse({ status: 404, statusText: 'Not Found', error: {} }));
+const SECOND: ListResponse = { ...LIST, id: '2', name: 'Otra lista' };
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
@@ -33,7 +32,8 @@ describe('DashboardComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('ApiService', ['getActiveList', 'createList', 'joinList']);
+    apiSpy = jasmine.createSpyObj('ApiService', ['getMyLists', 'createList', 'joinList']);
+    apiSpy.getMyLists.and.returnValue(of([]));
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     routerSpy.navigate.and.returnValue(Promise.resolve(true));
 
@@ -52,34 +52,44 @@ describe('DashboardComponent', () => {
   });
 
   it('should create', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 
-  it('TS-3: should display the active list card with the correct phase and members', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+  it('TS-3: should display one card per list with the correct phase and members', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST, SECOND]));
     fixture.detectChanges();
 
-    const card = fixture.nativeElement.querySelector('ui-list-card') as HTMLElement;
-    expect(card).toBeTruthy();
-    expect(card.textContent).toContain('La pandilla');
-    expect(card.textContent).toContain('Propuestas');
-    expect(card.textContent).toContain('1 miembro');
+    const cards = fixture.nativeElement.querySelectorAll('ui-list-card') as NodeListOf<HTMLElement>;
+    expect(cards.length).toBe(2);
+    expect(cards[0].textContent).toContain('La pandilla');
+    expect(cards[0].textContent).toContain('Propuestas');
+    expect(cards[0].textContent).toContain('1 miembro');
+    expect(cards[1].textContent).toContain('Otra lista');
   });
 
-  it('TS-4: should display the empty state with create and join actions when there is no active list', () => {
-    apiSpy.getActiveList.and.returnValue(NOT_FOUND());
+  it('TS-4: should display the empty state with create and join actions when there are no lists', () => {
+    apiSpy.getMyLists.and.returnValue(of([]));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
     expect(fixture.nativeElement.querySelector('ui-list-card')).toBeFalsy();
+    expect(text).toContain('No tienes ninguna lista');
     expect(text).toContain('Crear lista nueva');
     expect(text).toContain('Unirse con código');
   });
 
-  it('should show a generic error when fetching the active list fails', () => {
-    apiSpy.getActiveList.and.returnValue(
+  it('TS-37: should keep the create and join actions visible when there are lists', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST, SECOND]));
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Crear lista nueva');
+    expect(text).toContain('Unirse con código');
+  });
+
+  it('should show a generic error when fetching the lists fails', () => {
+    apiSpy.getMyLists.and.returnValue(
       throwError(() => new HttpErrorResponse({ status: 500, error: {} })),
     );
     fixture.detectChanges();
@@ -88,7 +98,6 @@ describe('DashboardComponent', () => {
   });
 
   it('TS-5: should navigate to the suggestion phase when a list is created', () => {
-    apiSpy.getActiveList.and.returnValue(NOT_FOUND());
     fixture.detectChanges();
 
     component.openCreateModal();
@@ -106,26 +115,22 @@ describe('DashboardComponent', () => {
   });
 
   it('TS-6: should display the backend error inline when creation fails', () => {
-    apiSpy.getActiveList.and.returnValue(NOT_FOUND());
     fixture.detectChanges();
 
     component.openCreateModal();
     component.createForm.setValue({ name: 'La pandilla' });
     apiSpy.createList.and.returnValue(
-      throwError(
-        () => new HttpErrorResponse({ status: 400, error: { error: 'Ya tienes una lista activa' } }),
-      ),
+      throwError(() => new HttpErrorResponse({ status: 400, error: { error: 'Nombre no válido' } })),
     );
     component.createList();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Ya tienes una lista activa');
+    expect(fixture.nativeElement.textContent).toContain('Nombre no válido');
     expect(component.showCreateModal()).toBeTrue();
     expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
   it('TS-7: should navigate to the suggestion phase when joining with a valid code', () => {
-    apiSpy.getActiveList.and.returnValue(NOT_FOUND());
     fixture.detectChanges();
 
     component.openJoinModal();
@@ -142,7 +147,6 @@ describe('DashboardComponent', () => {
   });
 
   it('TS-8: should display the backend error inline when the join code is invalid', () => {
-    apiSpy.getActiveList.and.returnValue(NOT_FOUND());
     fixture.detectChanges();
 
     component.openJoinModal();
@@ -164,21 +168,20 @@ describe('DashboardComponent', () => {
     expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
-  it('FR-9: should re-fetch the list state and navigate to the phase view when the card is clicked', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+  it('FR-9: should navigate to the suggestion phase when an ADDITION card is clicked', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST]));
     fixture.detectChanges();
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
 
     const card = fixture.nativeElement.querySelector('.ui-list-card') as HTMLElement;
     card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fixture.detectChanges();
 
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(2);
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/lists', '1', 'suggestion']);
   });
 
   it('FR-9: should navigate to the selection phase when the list is in SELECTION', () => {
-    apiSpy.getActiveList.and.returnValue(of({ ...LIST, phase: 'SELECTION' }));
+    apiSpy.getMyLists.and.returnValue(of([{ ...LIST, phase: 'SELECTION' }]));
     fixture.detectChanges();
 
     const card = fixture.nativeElement.querySelector('.ui-list-card') as HTMLElement;
@@ -189,7 +192,7 @@ describe('DashboardComponent', () => {
   });
 
   it('FR-9: should navigate to the voting phase when the list is in VOTING', () => {
-    apiSpy.getActiveList.and.returnValue(of({ ...LIST, phase: 'VOTING' }));
+    apiSpy.getMyLists.and.returnValue(of([{ ...LIST, phase: 'VOTING' }]));
     fixture.detectChanges();
 
     const card = fixture.nativeElement.querySelector('.ui-list-card') as HTMLElement;
@@ -200,7 +203,7 @@ describe('DashboardComponent', () => {
   });
 
   it('FR-9: should navigate to the results view when the list is COMPLETED', () => {
-    apiSpy.getActiveList.and.returnValue(of({ ...LIST, phase: 'COMPLETED' }));
+    apiSpy.getMyLists.and.returnValue(of([{ ...LIST, phase: 'COMPLETED' }]));
     fixture.detectChanges();
 
     const card = fixture.nativeElement.querySelector('.ui-list-card') as HTMLElement;
@@ -210,13 +213,25 @@ describe('DashboardComponent', () => {
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/lists', '1', 'results']);
   });
 
-  it('FR-16: should reuse the cached active list across visits within the TTL', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+  it('FR-16: should reuse the cached lists across visits within the TTL', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST]));
     fixture.detectChanges();
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
 
-    component.loadActiveList();
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
-    expect(component.activeList()?.id).toBe('1');
+    component.loadLists();
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
+    expect(component.lists().length).toBe(1);
+  });
+
+  it('TS-40: should navigate to the new list when a second list is created', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST]));
+    fixture.detectChanges();
+
+    component.openCreateModal();
+    component.createForm.setValue({ name: 'Otra lista' });
+    apiSpy.createList.and.returnValue(of(SECOND));
+    component.createList();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/lists', '2', 'suggestion']);
   });
 });

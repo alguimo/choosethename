@@ -3,7 +3,7 @@ import { LoginComponent } from '@app/features/auth/login.component';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { Router } from '@angular/router';
+import { Navigation, Router } from '@angular/router';
 import { AuthService } from '@app/services/auth.service';
 import { ApiService } from '@app/services/api.service';
 import { of, throwError } from 'rxjs';
@@ -19,7 +19,8 @@ describe('LoginComponent', () => {
   beforeEach(async () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['setToken']);
     apiServiceSpy = jasmine.createSpyObj('ApiService', ['login']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy = jasmine.createSpyObj('Router', ['navigate', 'getCurrentNavigation']);
+    routerSpy.getCurrentNavigation.and.returnValue(null);
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, ReactiveFormsModule],
@@ -74,5 +75,31 @@ describe('LoginComponent', () => {
     expect(component.loginForm.value).toEqual({ username: 'test', password: 'wrong' });
     expect(authServiceSpy.setToken).not.toHaveBeenCalled();
     expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  it('TS-30: should navigate to /register when "Crear cuenta" is clicked', () => {
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('ui-button button'),
+    ) as HTMLButtonElement[];
+    const crearcuentaButton = buttons.find(
+      (button) => button.textContent?.trim() === 'Crear cuenta',
+    );
+
+    expect(crearcuentaButton).toBeTruthy();
+    crearcuentaButton?.click();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/register']);
+  });
+
+  it('should show the registration success message when arriving with registered state', () => {
+    routerSpy.getCurrentNavigation.and.returnValue({
+      extras: { state: { registered: true } },
+    } as unknown as Navigation);
+
+    fixture = TestBed.createComponent(LoginComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Cuenta creada correctamente. Inicia sesión.');
   });
 });

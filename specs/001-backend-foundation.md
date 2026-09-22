@@ -1,21 +1,21 @@
 # Spec 001 — Backend Foundation
 
 ## Context & Objectives
-This specification defines the core infrastructure, database setup, and user authentication mechanism for the Collaborative Name Decider Backend. The goal is to establish a secure, decoupled, and testable foundation before implementing any list or voting features. It enables an Administrator to register new Participant accounts and allows Participants to securely log in.
+This specification defines the core infrastructure, database setup, and user authentication mechanism for the Collaborative Name Decider Backend. The goal is to establish a secure, decoupled, and testable foundation before implementing any list or voting features. It enables any user to self-register a Participant account and allows Participants to securely log in.
 
 ## Users / Actors
-* **Administrator**: A system role responsible for creating new Participant accounts. The first Administrator account is provisioned directly against the system infrastructure.
-* **Participant**: A regular user who can authenticate and will later interact with lists and names.
+* **Administrator**: A system role with elevated privileges. The first Administrator account is provisioned directly against the system infrastructure; it is not used for participant registration.
+* **Participant**: A regular user who can self-register and authenticate to later interact with lists and names.
 
 ## User Stories
-* **US-1**: As an Administrator, I want to create Participant accounts with a username and password so they can log in.
+* **US-1**: As a new user, I want to register my own Participant account with a username and password so I can log in.
 * **US-2**: As a Participant, I want to log in using my credentials so I can obtain an access token and interact with the API.
 
 ## Functional Requirements (Acceptance Criteria in EARS format)
 
 ### 1. Account Creation
-* **FR-1**: WHEN an Administrator requests to create a new Participant account, THE SYSTEM MUST validate that the password meets the complexity requirements (min 8 characters, 1 uppercase, 1 digit), hash it using BCrypt with a cost factor of 12, and save the Participant entity to the database.
-* **FR-2**: IF an Administrator attempts to register a Participant with a username that already exists, THEN THE SYSTEM MUST reject the operation with a 409 Conflict.
+* **FR-1**: WHEN a user requests to register a new Participant account, THE SYSTEM MUST validate that the password meets the complexity requirements (min 8 characters, 1 uppercase, 1 digit), hash it using BCrypt with a cost factor of 12, and save the Participant entity to the database.
+* **FR-2**: IF a user attempts to register a Participant with a username that already exists, THEN THE SYSTEM MUST reject the operation with a 409 Conflict.
 
 ### 2. User Authentication
 * **FR-3**: WHEN a Participant requests to log in with valid credentials, THE SYSTEM MUST return a success response containing a stateless JWT (valid for 24 hours). The JWT payload must contain the `sub` (username) and `roles` (authority) claims.
@@ -45,7 +45,6 @@ This specification defines the core infrastructure, database setup, and user aut
 * **SQL Injection & Special Characters**: Usernames must be validated using an alphanumeric regex pattern to prevent injection attacks.
 
 ## Out of Scope
-* Self-service sign-up for Participants.
 * Passkey (WebAuthn) integration.
 * Token refresh logic.
 * List management, matching, and voting features.

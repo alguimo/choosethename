@@ -37,6 +37,16 @@ describe('ApiService', () => {
     req.flush({ accessToken: 'fake-token', tokenType: 'Bearer' });
   });
 
+  it('should POST to /auth/register', () => {
+    const credentials = { username: 'alvaro', password: 'Secret1' };
+    service.register(credentials).subscribe((profile) => {
+      expect(profile.username).toBe('alvaro');
+    });
+    const req = expectReq('POST', '/api/v1/auth/register');
+    expect(req.request.body).toEqual(credentials);
+    req.flush({ id: 1, username: 'alvaro', role: 'PARTICIPANT' });
+  });
+
   it('should POST to /lists', () => {
     const body = { name: 'La pandilla' };
     service.createList(body).subscribe();
@@ -53,9 +63,14 @@ describe('ApiService', () => {
     req.flush({ id: '1' });
   });
 
-  it('should GET /lists/active', () => {
-    service.getActiveList().subscribe();
-    expectReq('GET', '/api/v1/lists/active').flush({ id: '1' });
+  it('should GET /lists', () => {
+    service.getMyLists().subscribe();
+    expectReq('GET', '/api/v1/lists').flush([]);
+  });
+
+  it('should GET /lists/{id}', () => {
+    service.getListById('1').subscribe();
+    expectReq('GET', '/api/v1/lists/1').flush({ id: '1' });
   });
 
   it('should PATCH /lists/{id}/close-invitations', () => {

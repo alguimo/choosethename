@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/lists")
 public class ListController {
@@ -51,10 +53,18 @@ public class ListController {
         return ResponseEntity.ok(listService.joinList(userId, request.getCode()));
     }
 
-    @GetMapping("/active")
-    public ResponseEntity<ListResponseDTO> getActiveList(@AuthenticationPrincipal String username) {
+    @GetMapping
+    public ResponseEntity<List<ListResponseDTO>> getMyLists(@AuthenticationPrincipal String username) {
         Long userId = currentUserResolver.requireUserId(username);
-        return ResponseEntity.ok(listService.getActiveList(userId));
+        return ResponseEntity.ok(listService.getListsForUser(userId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ListResponseDTO> getListById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal String username) {
+        Long userId = currentUserResolver.requireUserId(username);
+        return ResponseEntity.ok(listService.getListById(id, userId));
     }
 
     @PatchMapping("/{id}/close-invitations")

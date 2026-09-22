@@ -60,7 +60,6 @@ class ListServiceJoinTest {
     }
 
     private void stubJoinEnvironment() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         when(listRepository.findByInvitationCodeForUpdate(anyString())).thenReturn(Optional.of(activeList()));
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(new User()));
@@ -94,7 +93,6 @@ class ListServiceJoinTest {
     @Test
     @DisplayName("FR-6: Reject non-existent invitation code (404)")
     void shouldThrowNotFoundForNonExistentCode() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> listService.joinList(USER_ID, CODE))
@@ -104,7 +102,6 @@ class ListServiceJoinTest {
     @Test
     @DisplayName("FR-7: Reject expired invitation code (400)")
     void shouldRejectExpiredCode() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         ListEntity expired = activeList();
         expired.setCodeExpiresAt(Instant.now().minusSeconds(60));
         when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(expired));
@@ -117,7 +114,6 @@ class ListServiceJoinTest {
     @Test
     @DisplayName("FR-7: Reject closed invitations (400)")
     void shouldRejectClosedInvitations() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         ListEntity closed = activeList();
         closed.setInvitationsOpen(false);
         when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(closed));
@@ -130,7 +126,6 @@ class ListServiceJoinTest {
     @Test
     @DisplayName("FR-8: Reject joining a list the user already belongs to (400)")
     void shouldRejectDuplicateMembership() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(activeList()));
         when(membershipRepository.findByListIdAndUserId(LIST_ID, USER_ID))
                 .thenReturn(Optional.of(new ListMembershipEntity()));
@@ -141,20 +136,19 @@ class ListServiceJoinTest {
     }
 
     @Test
-    @DisplayName("FR-9: Reject join when user already belongs to another active list (400)")
-    void shouldRejectWhenUserInAnotherActiveList() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList()))
-                .thenReturn(List.of(activeList()));
+    @DisplayName("FR-3: Join a second list while already belonging to another one succeeds")
+    void shouldJoinSecondListWhileInAnotherList() {
+        stubJoinEnvironment();
 
-        assertThatThrownBy(() -> listService.joinList(USER_ID, CODE))
-                .isInstanceOf(ListOperationException.class)
-                .hasMessageContaining("active list");
+        ListResponseDTO result = listService.joinList(USER_ID, CODE);
+
+        assertThat(result).isNotNull();
+        verify(membershipRepository).save(any(ListMembershipEntity.class));
     }
 
     @Test
     @DisplayName("FR-10: Reject join when list already has 5 members (400)")
     void shouldRejectWhenListIsFull() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(activeList()));
         when(membershipRepository.countByListId(LIST_ID)).thenReturn(5L);
 
@@ -166,7 +160,6 @@ class ListServiceJoinTest {
     @Test
     @DisplayName("FR-11: Joining the 5th member auto-closes invitations")
     void shouldAutoCloseInvitationsAtFiveMembers() {
-        when(listRepository.findActiveListsForUser(eq(USER_ID), anyList())).thenReturn(List.of());
         when(listRepository.findByInvitationCodeForUpdate(CODE)).thenReturn(Optional.of(activeList()));
         when(membershipRepository.countByListId(LIST_ID)).thenReturn(4L);
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());

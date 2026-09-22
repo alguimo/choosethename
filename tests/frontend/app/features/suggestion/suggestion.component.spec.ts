@@ -37,12 +37,12 @@ describe('SuggestionComponent', () => {
 
   beforeEach(async () => {
     apiSpy = jasmine.createSpyObj('ApiService', [
-      'getActiveList',
+      'getListById',
       'addNames',
       'finishAddition',
       'login',
     ]);
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+    apiSpy.getListById.and.returnValue(of(LIST));
     apiSpy.login.and.returnValue(of({ accessToken: 'new-token', tokenType: 'Bearer' }));
     authSpy = jasmine.createSpyObj('AuthService', ['getToken', 'setToken', 'logout']);
     authSpy.getToken.and.returnValue(null);
@@ -260,12 +260,12 @@ describe('SuggestionComponent', () => {
   });
 
   it('FR-47: should fetch the list state on entry and redirect when the phase is not ADDITION', () => {
-    apiSpy.getActiveList.and.returnValue(of({ ...LIST, phase: 'SELECTION' }));
+    apiSpy.getListById.and.returnValue(of({ ...LIST, phase: 'SELECTION' }));
 
     const freshFixture = TestBed.createComponent(SuggestionComponent);
     freshFixture.detectChanges();
 
-    expect(apiSpy.getActiveList).toHaveBeenCalled();
+    expect(apiSpy.getListById).toHaveBeenCalled();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/lists', '1', 'selection']);
   });
 

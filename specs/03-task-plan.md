@@ -33,14 +33,12 @@
   - **Done when**: `ListMapperTest` passes, mapping entities to `ListResponseDTO` including member usernames and expiration timestamp.
 
 - [x] **Task 3: Invitation Code Generator & Repositories**
-  - **Description**: Implement `InvitationCodeGenerator` (generating unique 6-character uppercase alphanumeric strings) and Spring Data JPA repositories `ListRepository` and `ListMembershipRepository` with active list lookup methods.
-  - **RF**: FR-1, FR-4, FR-6, FR-7, FR-16.
-  - **Done when**: Unit tests for `InvitationCodeGenerator` and custom repository methods pass 100%.
+  - **Description**: Implement `InvitationCodeGenerator` (generating unique 6-character uppercase alphanumeric strings) and Spring Data JPA repositories `ListRepository` and `ListMembershipRepository` with list lookup methods (all lists for a user).
 
-- [x] **Task 4: List Service — Creation & Active Retrieval**
-  - **Description**: Implement `ListService` logic for list creation (`createList`) with 48h expiration and active list retrieval (`getActiveList`). Enforce restriction preventing users from having multiple active lists.
-  - **RF**: FR-1, FR-2, FR-3, FR-15, FR-16.
-  - **Done when**: `ListServiceTest` passes for successful creation, blank name validation, duplicate active list rejection, and active list fetch.
+- [x] **Task 4: List Service — Creation & Multi-List Retrieval**
+  - **Description**: Implement `ListService` logic for list creation (`createList`) with 48h expiration, all-lists retrieval (`getListsForUser`, excluding EXPIRED), and single-list retrieval with a membership safeguard (`getListById`, 404 for non-members and non-existent ids). A user may belong to multiple lists.
+  - **RF**: FR-1, FR-3, FR-15, FR-16, NFR-1.
+  - **Done when**: `ListServiceTest` passes for successful creation, blank name validation, multi-list retrieval, and the membership safeguard.
 
 - [x] **Task 5: List Service — Joining & Closing Invitations**
   - **Description**: Implement `ListService` logic for `joinList` and `closeInvitations`. Enforce 5-member cap, expiration check, case-insensitive code matching, auto-close on 5th member, and owner-only permission for closing invitations.
@@ -48,9 +46,9 @@
   - **Done when**: `ListServiceTest` passes for join scenarios (success, expired code, closed invitations, 5-member cap, duplicate member) and invitation closure scenarios.
 
 - [x] **Task 6: List API Controller & Integration Tests (TDD Verification)**
-  - **Description**: Create `ListController` mapping REST endpoints (`POST /api/v1/lists`, `POST /api/v1/lists/join`, `GET /api/v1/lists/active`, `PATCH /api/v1/lists/{id}/close-invitations`). Write integration test suite covering `TS-1` through `TS-14`.
-  - **RF**: FR-1 through FR-16, TS-1 to TS-14.
-  - **Done when**: Full integration test suite `ListControllerIntegrationTest` passes 100% covering all `TS-1` to `TS-14` test scenarios.
+  - **Description**: Create `ListController` mapping REST endpoints (`POST /api/v1/lists`, `GET /api/v1/lists`, `GET /api/v1/lists/{id}`, `POST /api/v1/lists/join`, `PATCH /api/v1/lists/{id}/close-invitations`). Write integration test suite covering `TS-1` through `TS-18`.
+  - **RF**: FR-1 through FR-16, TS-1 to TS-18.
+  - **Done when**: Full integration test suite `ListControllerIntegrationTest` passes 100% covering all `TS-1` to `TS-18` test scenarios.
 
 ---
 
@@ -274,8 +272,8 @@ These two specs are developed **in parallel**: the `ui-kit` component inventory 
   - **Done when**: 006 TS-13..TS-17 pass.
 
 - [ ] **Task 7: Core services — api, local-storage, auth + JWT interceptor (~30 min)**
-  - **Description**: Implement `api.service` wrapping every `openapi.yaml` operation (login, createList, joinList, getActiveList, closeInvitations, addNames, finishAddition, completeSelection, getSelection, adoptFadedName, submitVote, getResults), `local-storage.service` (namespaced `list_{id}_*` keys, restore/clear with success/error policy), `auth.service` (token storage, re-auth trigger) and the `Authorization: Bearer` HTTP interceptor.
-  - **RF**: 005 FR-1..FR-5, FR-24, FR-43, FR-44, FR-45, FR-46; 005 NFR-3, NFR-4, NFR-7.
+  - **Description**: Implement `api.service` wrapping every `openapi.yaml` operation (login, register, createList, listMyLists, getListById, joinList, closeInvitations, addNames, finishAddition, completeSelection, getSelection, adoptFadedName, submitVote, getResults), `local-storage.service` (namespaced `list_{id}_*` keys, restore/clear with success/error policy, `clearAllListCaches()`), `auth.service` (token storage, logout, re-auth trigger) and the `Authorization: Bearer` HTTP interceptor.
+  - **RF**: 005 FR-1..FR-5, FR-44..FR-47, FR-65; 005 NFR-3, NFR-4, NFR-7.
   - **Done when**: `HttpTestingController`-based tests pass for each endpoint call, token attach, and cache clear/retain semantics.
 
 - [ ] **Task 8: Auth feature — login screen (~20 min)**
@@ -284,9 +282,9 @@ These two specs are developed **in parallel**: the `ui-kit` component inventory 
   - **Done when**: 005 TS-1, TS-2 pass.
 
 - [x] **Task 9: Dashboard feature (~30 min)**
-  - **Description**: Compose dashboard from `ui-list-card` / empty state (`ui-button` "Crear lista nueva" + "Unirse con código"), create/join modals using `ui-modal`, 5-minute in-memory cache and re-fetch on visit, reload after phase completion, inline backend error display.
-  - **RF**: 005 FR-6..FR-17.
-  - **Done when**: 005 TS-3..TS-8, TS-28 pass.
+  - **Description**: Compose dashboard from one `ui-list-card` per list returned by `GET /lists` (or the empty state), always-visible "Crear lista nueva" + "Unirse con código" actions, create/join modals using `ui-modal`, 5-minute in-memory cache and re-fetch on visit, reload after phase completion, inline backend error display.
+  - **RF**: 005 FR-6..FR-18.
+  - **Done when**: 005 TS-3..TS-8, TS-28, TS-37, TS-40 pass.
 
 - [x] **Task 10: Suggestion feature (local-first sync) (~30 min)**
   - **Description**: Compose suggestion panel (`ui-name-input-row`, list with `ui-icon-button` delete, `ui-validation-message`), character validation ([letters/accents, spaces, hyphens]), case/accent-insensitive duplicate check, restore from localStorage on entry, "Terminar Fase" guard (≥1 name), two-step sync (`addNames` → `finishAddition`), clear-on-success / retain-on-error.
@@ -300,7 +298,7 @@ These two specs are developed **in parallel**: the `ui-kit` component inventory 
 
 - [x] **Task 12: Voting feature (round-based) (~30 min)**
   - **Description**: Compose `ui-draggable-ranking-list` + `ui-round-indicator`, restore local ranking per round, discard stale rankings (names not in `currentPool`), submit via `POST vote` (roundNumber + rankings), handle 409 (retain + error), 400/422 (red border + "Voto no válido"), 401 (re-auth modal then retry).
-  - **RF**: 005 FR-32..FR-39; Edge cases stale ranking, session expiry.
+  - **RF**: 005 FR-33..FR-40; Edge cases stale ranking, session expiry.
   - **Done when**: 005 TS-19..TS-23, TS-26, TS-29 pass.
 
 - [x] **Task 13: Results feature (~15 min)**
@@ -309,6 +307,33 @@ These two specs are developed **in parallel**: the `ui-kit` component inventory 
   - **Done when**: 005 TS-24, TS-25 pass.
 
 - [x] **Task 14: Full verification (~20 min)**
-  - **Description**: Run `npm test` and `npm run lint`; verify 100% green and zero warnings; confirm every Spec 005/006 test scenario (TS-1..TS-29 for 005, TS-1..TS-17 for 006) is exercised.
+  - **Description**: Run `npm test` and `npm run lint`; verify 100% green and zero warnings; confirm every Spec 005/006 test scenario (TS-1..TS-40 for 005, TS-1..TS-18 for 006) is exercised.
   - **RF**: Constitution P3.2; AGENTS.md finishing rules.
   - **Done when**: Frontend suites pass 100%, zero lint warnings, and each scenario maps to a passing test.
+
+---
+
+# Amendment: Multi-List Support, App Bar & Registration Visibility (Specs 002/005/006)
+
+> Adds multi-list membership, a shared authenticated app bar with logout, and fixes the AOT
+> compile error that kept the "Crear cuenta" action from rendering in the served bundle.
+
+- [x] **Task 15: Registration visibility fix (~15 min)**
+  - **Description**: Fix `register.component.ts` so `usernameError()`/`passwordError()` return `string` (empty string, never `null`) to satisfy the `ui-input-field` `error` input type under AOT; ensure the login screen's "Crear cuenta" action renders in the production build.
+  - **RF**: 005 FR-53, FR-54.
+  - **Done when**: 005 TS-30..TS-36 pass and `npm run build` (AOT) succeeds with the "Crear cuenta" action present.
+
+- [ ] **Task 16: App bar organism (`ui-app-bar`) (~20 min)**
+  - **Description**: Add the `ui-app-bar` organism (inputs `title`/`logoutLabel`; outputs `titleClicked`/`logoutClicked`), presentational only.
+  - **RF**: 006 FR-39..FR-41.
+  - **Done when**: 006 TS-18 passes.
+
+- [ ] **Task 17: Authenticated layout, routes & logout (~25 min)**
+  - **Description**: Add `AppLayoutComponent` (uses `ui-app-bar` + `router-outlet`), wrap authenticated routes under it with `authGuard`, wire logout to clear JWT, invalidate the dashboard cache, clear `list_*` localStorage entries, and navigate to `/login`.
+  - **RF**: 005 FR-63..FR-66, NFR-4, NFR-8.
+  - **Done when**: 005 TS-38, TS-39 pass.
+
+- [ ] **Task 18: Frontend verification for the amendment (~15 min)**
+  - **Description**: Run `npm test`, `npm run lint`, and `npm run build` (AOT); confirm green, zero warnings, and a successful production build.
+  - **RF**: Constitution P3.2; AGENTS.md finishing rules.
+  - **Done when**: Frontend suites pass 100%, zero lint warnings, and the AOT build succeeds.

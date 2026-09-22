@@ -4,8 +4,8 @@
 The system is a collaborative web application that helps groups of people choose a name through a structured workflow: **suggestion → selection → voting → results**. A group forms a *list* with an invitation code, members contribute candidate *names*, common and faded suggestions are matched, participants vote through elimination rounds, and the system exposes the final ranked result.
 
 ## Actors
-* **Administrator**: Creates Participant accounts with a username and password.
-* **Participant**: Authenticates, joins or creates lists, suggests names, selects, ranks, and views results.
+* **Administrator**: A role with elevated privileges; the first account is provisioned directly against the system infrastructure. It plays no part in participant registration (registration is self-service).
+* **Participant**: Authenticates, registers their own account, joins or creates lists, suggests names, selects, ranks, and views results.
 * **End User**: Any Participant interacting with the Spanish-language UI.
 
 ## Architecture
@@ -18,7 +18,7 @@ The system is built on two strictly decoupled layers communicating over stateles
 * The **Constitution** (`00-constitution.md`) is the binding set of principles: strict SDD, strict frontend/backend decoupling, mandatory test-first verification, English engineering language with Spanish UI, technology guidance via `AGENTS.md`.
 * Subsystem specifications 001–006 define the detailed functional contracts:
   * `001-backend-foundation.md` — registration, authentication, JWT, migrations.
-  * `002-backend-lists.md` — list creation, joining, invitation codes, membership.
+  * `002-backend-lists.md` — list creation, joining, invitation codes, multi-list membership, retrieval safeguards.
   * `003-backend-names.md` — name suggestions, normalization, phase transitions, selection.
   * `004-backend-voting.md` — voting rounds, Borda ranking, results, timeouts.
   * `005-frontend-ui.md` — application flows.

@@ -118,7 +118,7 @@ class Spec003IntegrationTest {
             .post("/api/v1/lists/" + listId + "/finish-addition")
             .then().statusCode(200);
         given().header("Authorization", "Bearer " + alice)
-            .get("/api/v1/lists/active")
+            .get("/api/v1/lists/" + listId)
             .then().statusCode(200)
             .body("phase", org.hamcrest.Matchers.equalTo("ADDITION"));
 
@@ -130,7 +130,7 @@ class Spec003IntegrationTest {
 
         // FR-4: both finished => SELECTION and invitations auto-closed (spec 002 FR-14)
         given().header("Authorization", "Bearer " + alice)
-            .get("/api/v1/lists/active")
+            .get("/api/v1/lists/" + listId)
             .then().statusCode(200)
             .body("phase", org.hamcrest.Matchers.equalTo("SELECTION"))
             .body("invitationsOpen", org.hamcrest.Matchers.is(false));
@@ -165,14 +165,14 @@ class Spec003IntegrationTest {
             .post("/api/v1/lists/" + listId + "/complete-selection")
             .then().statusCode(200);
         given().header("Authorization", "Bearer " + alice)
-            .get("/api/v1/lists/active")
+            .get("/api/v1/lists/" + listId)
             .then().statusCode(200)
             .body("phase", org.hamcrest.Matchers.equalTo("SELECTION"));
         given().header("Authorization", "Bearer " + bob)
             .post("/api/v1/lists/" + listId + "/complete-selection")
             .then().statusCode(200);
         given().header("Authorization", "Bearer " + alice)
-            .get("/api/v1/lists/active")
+            .get("/api/v1/lists/" + listId)
             .then().statusCode(200)
             .body("phase", org.hamcrest.Matchers.equalTo("VOTING"));
     }
@@ -200,7 +200,7 @@ class Spec003IntegrationTest {
             .body("error", org.hamcrest.Matchers.equalTo("At least one name must be provided to proceed to the selection phase."));
 
         given().header("Authorization", "Bearer " + carol)
-            .get("/api/v1/lists/active")
+            .get("/api/v1/lists/" + listId)
             .then().statusCode(200)
             .body("phase", org.hamcrest.Matchers.equalTo("ADDITION"));
     }

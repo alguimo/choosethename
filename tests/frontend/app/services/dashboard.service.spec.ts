@@ -21,6 +21,8 @@ const LIST: ListResponse = {
   members: [{ id: 'u1', username: 'alvaro' }],
 };
 
+const SECOND: ListResponse = { ...LIST, id: '2', name: 'Otra lista' };
+
 describe('DashboardService', () => {
   let service: DashboardService;
   let apiSpy: jasmine.SpyObj<ApiService>;
@@ -28,7 +30,7 @@ describe('DashboardService', () => {
 
   beforeEach(() => {
     now = 0;
-    apiSpy = jasmine.createSpyObj('ApiService', ['getActiveList']);
+    apiSpy = jasmine.createSpyObj('ApiService', ['getMyLists']);
     TestBed.configureTestingModule({
       providers: [
         DashboardService,
@@ -43,78 +45,73 @@ describe('DashboardService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should fetch the active list from the API on the first call', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+  it('should fetch the lists from the API on the first call', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST, SECOND]));
 
-    let result: ListResponse | null | undefined;
-    service.getActiveList().subscribe((list) => (result = list));
+    let result: ListResponse[] | undefined;
+    service.getMyLists().subscribe((lists) => (result = lists));
 
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
-    expect(result).toBe(LIST);
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
+    expect(result).toEqual([LIST, SECOND]);
   });
 
-  it('should reuse the cached list when called again within the TTL', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+  it('TS-40: should return an empty array when the user has no lists', () => {
+    apiSpy.getMyLists.and.returnValue(of([]));
 
-    service.getActiveList().subscribe(() => {});
+    let result: ListResponse[] | undefined;
+    service.getMyLists().subscribe((lists) => (result = lists));
 
-    let result: ListResponse | null | undefined;
-    service.getActiveList().subscribe((list) => (result = list));
+    expect(result).toEqual([]);
+  });
 
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
-    expect(result).toBe(LIST);
+  it('should reuse the cached lists when called again within the TTL', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST]));
+
+    service.getMyLists().subscribe(() => {});
+
+    let result: ListResponse[] | undefined;
+    service.getMyLists().subscribe((lists) => (result = lists));
+
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
+    expect(result).toEqual([LIST]);
   });
 
   it('TS-28: should re-fetch from the API once the 5-minute TTL elapses', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+    apiSpy.getMyLists.and.returnValue(of([LIST]));
 
     now = 1_000_000;
-    service.getActiveList().subscribe(() => {});
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
+    service.getMyLists().subscribe(() => {});
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
 
     now = 1_000_000 + TTL_MS - 1;
-    service.getActiveList().subscribe(() => {});
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
+    service.getMyLists().subscribe(() => {});
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
 
     now = 1_000_000 + TTL_MS;
-    service.getActiveList().subscribe(() => {});
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(2);
+    service.getMyLists().subscribe(() => {});
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(2);
   });
 
-  it('should expose null and cache it when the API returns 404', () => {
-    apiSpy.getActiveList.and.returnValue(
-      throwError(() => new HttpErrorResponse({ status: 404, error: {} })),
-    );
-
-    let result: ListResponse | null | undefined;
-    service.getActiveList().subscribe((list) => (result = list));
-    expect(result).toBeNull();
-
-    service.getActiveList().subscribe((list) => (result = list));
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
-    expect(result).toBeNull();
-  });
-
-  it('should propagate non-404 errors', () => {
-    apiSpy.getActiveList.and.returnValue(
+  it('should propagate errors', () => {
+    apiSpy.getMyLists.and.returnValue(
       throwError(() => new HttpErrorResponse({ status: 500, error: {} })),
     );
 
     let received: unknown;
-    service.getActiveList().subscribe({ error: (error: unknown) => (received = error) });
+    service.getMyLists().subscribe({ error: (error: unknown) => (received = error) });
 
     expect(received).toBeInstanceOf(HttpErrorResponse);
   });
 
   it('should invalidate the cache forcing a refetch', () => {
-    apiSpy.getActiveList.and.returnValue(of(LIST));
+    apiSpy.getMyLists.and.returnValue(of([LIST]));
 
-    service.getActiveList().subscribe(() => {});
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(1);
+    service.getMyLists().subscribe(() => {});
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(1);
 
     service.invalidate();
-    service.getActiveList().subscribe(() => {});
+    service.getMyLists().subscribe(() => {});
 
-    expect(apiSpy.getActiveList).toHaveBeenCalledTimes(2);
+    expect(apiSpy.getMyLists).toHaveBeenCalledTimes(2);
   });
 });

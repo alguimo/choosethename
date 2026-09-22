@@ -14,7 +14,7 @@ The OpenAPI contract is defined in `specs/openapi.yaml`. The frontend and the ba
 ### Spec 001 — Foundation
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/v1/auth/register` | Administrator registers a Participant (409 if username exists, 400 on invalid/blank input). |
+| `POST` | `/api/v1/auth/register` | Any user self-registers a Participant account (409 if username exists, 400 on invalid/blank input). |
 | `POST` | `/api/v1/auth/login` | Participant logs in; returns JWT (401 on invalid credentials). |
 | `GET` | `/api/v1/test/protected` | Guarded smoke endpoint (401 without token). |
 
@@ -22,8 +22,9 @@ The OpenAPI contract is defined in `specs/openapi.yaml`. The frontend and the ba
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/api/v1/lists` | Create a list with a 48 h invitation code. |
-| `POST` | `/api/v1/lists/join` | Join a list by code. |
-| `GET` | `/api/v1/lists/active` | Fetch the caller's active list. |
+| `GET` | `/api/v1/lists` | All the caller's lists (own + joined), incl. COMPLETED; empty array if none. |
+| `GET` | `/api/v1/lists/{id}` | List details; 404 for non-members, non-existent ids, and EXPIRED lists. |
+| `POST` | `/api/v1/lists/join` | Join a list by code (multi-list membership allowed). |
 | `PATCH` | `/api/v1/lists/{id}/close-invitations` | Owner closes invitations for the list. |
 
 ### Spec 003 — Names & Selection
@@ -50,4 +51,4 @@ The OpenAPI contract is defined in `specs/openapi.yaml`. The frontend and the ba
 * **Error**: `error` message surfaced inline by the UI.
 
 ## Authorization Rules
-All `/api/v1/lists/**` operations require a valid JWT and list membership (403 otherwise). Phase-bound operations (voting, finishing, completing) are rejected with 409 when the list phase does not allow them.
+All `/api/v1/lists/**` operations require a valid JWT and (for read/modify operations on a specific list) membership in that list: `GET /api/v1/lists` returns only the caller's own lists (excluding EXPIRED), and `GET /api/v1/lists/{id}` verifies membership, returning 404 for non-members, non-existent ids, and EXPIRED lists. Phase-bound operations (voting, finishing, completing) are rejected with 409 when the list phase does not allow them.

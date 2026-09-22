@@ -65,7 +65,6 @@ class ListServiceTest {
     @Test
     @DisplayName("FR-1: Create list successfully with code, owner as first member, invitations open")
     void shouldCreateListSuccessfully() {
-        when(listRepository.findActiveListsForUser(eq(OWNER_ID), anyList())).thenReturn(List.of());
         when(codeGenerator.generate()).thenReturn(VALID_CODE);
         when(listRepository.save(any(ListEntity.class))).thenAnswer(inv -> {
             ListEntity entity = inv.getArgument(0);
@@ -95,15 +94,21 @@ class ListServiceTest {
     }
 
     @Test
-    @DisplayName("FR-2: Reject creation when user already belongs to an active list (400)")
-    void shouldRejectCreationWhenUserAlreadyHasActiveList() {
-        ListEntity active = new ListEntity();
-        active.setId(1L);
-        when(listRepository.findActiveListsForUser(eq(OWNER_ID), anyList())).thenReturn(List.of(active));
+    @DisplayName("FR-1: Allow creating another list while already belonging to other lists")
+    void shouldAllowCreatingAdditionalList() {
+        when(codeGenerator.generate()).thenReturn(VALID_CODE);
+        when(listRepository.save(any(ListEntity.class))).thenAnswer(inv -> {
+            ListEntity entity = inv.getArgument(0);
+            entity.setId(2L);
+            return entity;
+        });
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
+        stubResponseDto();
 
-        assertThatThrownBy(() -> listService.createList("Another List", OWNER_ID))
-                .isInstanceOf(ListOperationException.class)
-                .hasMessageContaining("active list");
+        ListResponseDTO result = listService.createList("Second List", OWNER_ID);
+
+        assertThat(result).isNotNull();
+        verify(listRepository).save(any(ListEntity.class));
     }
 
     @Test
@@ -121,28 +126,101 @@ class ListServiceTest {
     }
 
     @Test
-    @DisplayName("FR-15: Return active list details for a member")
-    void shouldReturnActiveList() {
+    @DisplayName("FR-13: Return all visible lists for the user")
+    void shouldReturnListsForUser() {
+        ListEntity first = new ListEntity();
+        first.setId(1L);
+        first.setOwnerId(OWNER_ID);
+        ListEntity second = new ListEntity();
+        second.setId(2L);
+        second.setOwnerId(OWNER_ID);
+        when(listRepository.findListsForUser(eq(OWNER_ID), eq(ListPhase.EXPIRED)))
+                .thenReturn(List.of(first, second));
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
+        stubResponseDto();
+
+        List<ListResponseDTO> result = listService.getListsForUser(OWNER_ID);
+
+        assertThat(result).hasSize(2);
+        verify(listMapper, org.mockito.Mockito.times(2))
+                .toResponseDTO(any(ListEntity.class), anyList(), any(), anyList());
+    }
+
+    @Test
+    @DisplayName("FR-13: Return an empty list when the user belongs to no lists")
+    void shouldReturnEmptyWhenUserHasNoLists() {
+        when(listRepository.findListsForUser(eq(OWNER_ID), eq(ListPhase.EXPIRED))).thenReturn(List.of());
+
+        assertThat(listService.getListsForUser(OWNER_ID)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("FR-14: Return list details for the owner")
+    void shouldReturnListByIdForOwner() {
         ListEntity list = new ListEntity();
         list.setId(1L);
         list.setOwnerId(OWNER_ID);
-        when(listRepository.findActiveListsForUser(eq(OWNER_ID), anyList())).thenReturn(List.of(list));
+        list.setPhase(ListPhase.ADDITION);
+        when(listRepository.findById(1L)).thenReturn(Optional.of(list));
         when(membershipRepository.findByListId(1L)).thenReturn(List.of());
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
         stubResponseDto();
 
-        ListResponseDTO result = listService.getActiveList(OWNER_ID);
+        ListResponseDTO result = listService.getListById(1L, OWNER_ID);
 
         assertThat(result).isNotNull();
         verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList());
     }
 
     @Test
-    @DisplayName("FR-16: Return 404 equivalent when user has no active list")
-    void shouldThrowNotFoundWhenNoActiveList() {
-        when(listRepository.findActiveListsForUser(eq(OWNER_ID), anyList())).thenReturn(List.of());
+    @DisplayName("FR-14: Return list details for a non-owner member")
+    void shouldReturnListByIdForMember() {
+        ListEntity list = new ListEntity();
+        list.setId(1L);
+        list.setOwnerId(99L);
+        list.setPhase(ListPhase.SELECTION);
+        when(listRepository.findById(1L)).thenReturn(Optional.of(list));
+        when(membershipRepository.findByListIdAndUserId(1L, OWNER_ID)).thenReturn(Optional.of(new ListMembershipEntity()));
+        when(membershipRepository.findByListId(1L)).thenReturn(List.of());
+        when(userRepository.findById(99L)).thenReturn(Optional.of(owner()));
+        stubResponseDto();
 
-        assertThatThrownBy(() -> listService.getActiveList(OWNER_ID))
+        assertThat(listService.getListById(1L, OWNER_ID)).isNotNull();
+    }
+
+    @Test
+    @DisplayName("FR-15: Throw 404 when the list does not exist")
+    void shouldThrowNotFoundWhenListMissing() {
+        when(listRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> listService.getListById(1L, OWNER_ID))
+                .isInstanceOf(ListNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("FR-15: Throw 404 when the user is not an owner or member")
+    void shouldThrowNotFoundWhenNotAMember() {
+        ListEntity list = new ListEntity();
+        list.setId(1L);
+        list.setOwnerId(99L);
+        list.setPhase(ListPhase.ADDITION);
+        when(listRepository.findById(1L)).thenReturn(Optional.of(list));
+        when(membershipRepository.findByListIdAndUserId(1L, OWNER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> listService.getListById(1L, OWNER_ID))
+                .isInstanceOf(ListNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("FR-17: Throw 404 when the list is EXPIRED")
+    void shouldThrowNotFoundWhenListExpired() {
+        ListEntity list = new ListEntity();
+        list.setId(1L);
+        list.setOwnerId(OWNER_ID);
+        list.setPhase(ListPhase.EXPIRED);
+        when(listRepository.findById(1L)).thenReturn(Optional.of(list));
+
+        assertThatThrownBy(() -> listService.getListById(1L, OWNER_ID))
                 .isInstanceOf(ListNotFoundException.class);
     }
 }

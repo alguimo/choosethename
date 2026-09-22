@@ -170,7 +170,7 @@ export class VoteComponent implements OnInit {
     this.loading.set(true);
     this.submitError.set(null);
 
-    this.apiService.getActiveList().subscribe({
+    this.apiService.getListById(this.listId).subscribe({
       next: (list) => {
         this.pool.set(list.currentPool);
         this.roundNumber.set(list.currentRound);

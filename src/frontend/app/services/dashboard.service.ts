@@ -1,7 +1,6 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { ListResponse } from '../models/api.models';
 
@@ -14,8 +13,8 @@ export const NOW_PROVIDER = new InjectionToken<TimeProvider>('NOW_PROVIDER', {
   factory: () => () => Date.now(),
 });
 
-interface CachedList {
-  list: ListResponse | null;
+interface CachedLists {
+  lists: ListResponse[];
   fetchedAt: number;
 }
 
@@ -25,23 +24,17 @@ interface CachedList {
 export class DashboardService {
   private readonly api = inject(ApiService);
   private readonly now = inject(NOW_PROVIDER);
-  private cache: CachedList | null = null;
+  private cache: CachedLists | null = null;
 
-  getActiveList(): Observable<ListResponse | null> {
+  getMyLists(): Observable<ListResponse[]> {
     if (this.isFresh()) {
-      return of(this.cache!.list);
+      return of(this.cache!.lists);
     }
 
-    return this.api.getActiveList().pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 404) {
-          return of(null);
-        }
-        return throwError(() => error);
-      }),
-      map((list) => {
-        this.cache = { list, fetchedAt: this.now() };
-        return list;
+    return this.api.getMyLists().pipe(
+      map((lists) => {
+        this.cache = { lists, fetchedAt: this.now() };
+        return lists;
       }),
     );
   }

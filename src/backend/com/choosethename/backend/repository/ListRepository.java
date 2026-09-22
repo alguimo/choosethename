@@ -22,8 +22,9 @@ public interface ListRepository extends JpaRepository<ListEntity, Long> {
 
     @Query("SELECT l FROM ListEntity l WHERE l.id IN " +
            "(SELECT m.listId FROM ListMembershipEntity m WHERE m.userId = :userId) " +
-           "AND l.phase IN :phases")
-    List<ListEntity> findActiveListsForUser(@Param("userId") Long userId, @Param("phases") List<ListPhase> phases);
+           "AND l.phase <> :excludedPhase " +
+           "ORDER BY l.createdAt DESC")
+    List<ListEntity> findListsForUser(@Param("userId") Long userId, @Param("excludedPhase") ListPhase excludedPhase);
 
     List<ListEntity> findByPhaseAndCreatedAtBefore(ListPhase phase, Instant createdAt);
 }

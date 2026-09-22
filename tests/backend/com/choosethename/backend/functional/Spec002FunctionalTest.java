@@ -33,8 +33,10 @@ class Spec002FunctionalTest extends FunctionalTestBase {
         assertThat(created.jsonPath().getString("ownerUsername")).isEqualTo("alvaro_fun");
         assertThat(created.jsonPath().getList("members")).containsExactly("alvaro_fun");
 
-        // TS-2: another list while having an active list => 400
-        client.createList(alvaro, "Second List").then().statusCode(400);
+        // TS-2: create another list while already belonging to one => 201 (multi-list)
+        Response second = client.createList(alvaro, "Second List");
+        second.then().statusCode(201);
+        int secondId = second.jsonPath().getInt("id");
 
         // TS-3: blank name => 400
         client.createList(maria, "   ").then().statusCode(400);
@@ -73,18 +75,29 @@ class Spec002FunctionalTest extends FunctionalTestBase {
         // TS-12: non-owner cannot close invitations => 403
         client.closeInvitations(maria, listId).then().statusCode(403);
 
-        // TS-13: active list retrieval with full details
-        Response active = client.getActiveList(alvaro);
-        active.then().statusCode(200);
-        assertThat(active.jsonPath().getInt("id")).isEqualTo(listId);
-        assertThat(active.jsonPath().getString("name")).isEqualTo("Baby Names 2026");
-        assertThat(active.jsonPath().getString("phase")).isEqualTo("ADDITION");
-        assertThat(active.jsonPath().getString("invitationCode")).isEqualTo(code);
-        assertThat(active.jsonPath().getList("members"))
+        // TS-15: fetch a list by id as a member with full details
+        Response detail = client.getListById(alvaro, listId);
+        detail.then().statusCode(200);
+        assertThat(detail.jsonPath().getInt("id")).isEqualTo(listId);
+        assertThat(detail.jsonPath().getString("name")).isEqualTo("Baby Names 2026");
+        assertThat(detail.jsonPath().getString("phase")).isEqualTo("ADDITION");
+        assertThat(detail.jsonPath().getString("invitationCode")).isEqualTo(code);
+        assertThat(detail.jsonPath().getList("members"))
                 .containsExactlyInAnyOrder("alvaro_fun", "maria_fun", "carlos_fun", "david_fun", "elena_fun");
 
-        // TS-14: user without active list => 404
-        client.getActiveList(gema).then().statusCode(404);
+        // TS-14: my lists include every list the user belongs to (ordered by creation desc)
+        Response myLists = client.getMyLists(alvaro);
+        myLists.then().statusCode(200);
+        assertThat(myLists.jsonPath().getList("id")).contains(listId, secondId);
+
+        // TS-13: user who belongs to no list => 200 with an empty array
+        client.getMyLists(gema).then().statusCode(200).body("$", org.hamcrest.Matchers.empty());
+
+        // TS-16: fetch as a non-member => 404
+        client.getListById(gema, listId).then().statusCode(404);
+
+        // TS-17: fetch a non-existent list => 404
+        client.getListById(alvaro, 999_999).then().statusCode(404);
     }
 
     @Test

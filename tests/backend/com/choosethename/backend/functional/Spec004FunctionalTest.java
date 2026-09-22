@@ -29,7 +29,7 @@ class Spec004FunctionalTest extends FunctionalTestBase {
         completeSelection(alice, listId);
         completeSelection(bob, listId);
 
-        Response active = client.getActiveList(alice);
+        Response active = client.getListById(alice, listId);
         active.then().statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("VOTING"))
                 .body("currentRound", org.hamcrest.Matchers.is(1))
@@ -50,14 +50,14 @@ class Spec004FunctionalTest extends FunctionalTestBase {
 
         // One vote does not advance the round
         client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
-        assertThat(client.getActiveList(alice).jsonPath().getInt("currentRound")).isEqualTo(1);
+        assertThat(client.getListById(alice, listId).jsonPath().getInt("currentRound")).isEqualTo(1);
 
         // Re-vote overwrites without advancing
         client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
 
         // Second vote advances to round 2 (cap 5 keeps all four names)
         client.submitVote(bob, listId, 1, List.of("maria", "juan", "lucia", "sofia")).then().statusCode(200);
-        active = client.getActiveList(alice);
+        active = client.getListById(alice, listId);
         active.then().statusCode(200)
                 .body("currentRound", org.hamcrest.Matchers.is(2));
         assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "maria", "juan", "sofia");
@@ -95,19 +95,19 @@ class Spec004FunctionalTest extends FunctionalTestBase {
         completeSelection(alice, listId);
         completeSelection(bob, listId);
 
-        Response active = client.getActiveList(alice);
+        Response active = client.getListById(alice, listId);
         active.then().statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("VOTING"))
                 .body("totalRounds", org.hamcrest.Matchers.is(3));
         assertThat(active.jsonPath().getList("currentPool")).hasSize(16);
 
         voteAndAdvance(alice, bob, listId, 1);
-        assertThat(client.getActiveList(alice).jsonPath().getList("currentPool")).hasSize(10);
+        assertThat(client.getListById(alice, listId).jsonPath().getList("currentPool")).hasSize(10);
 
         voteAndAdvance(alice, bob, listId, 2);
-        assertThat(client.getActiveList(alice).jsonPath().getList("currentPool")).hasSize(5);
+        assertThat(client.getListById(alice, listId).jsonPath().getList("currentPool")).hasSize(5);
 
-        List<String> finalPool = client.getActiveList(alice).jsonPath().getList("currentPool");
+        List<String> finalPool = client.getListById(alice, listId).jsonPath().getList("currentPool");
         client.submitVote(alice, listId, 3, finalPool).then().statusCode(200);
         client.submitVote(bob, listId, 3, finalPool).then().statusCode(200);
 
@@ -135,7 +135,7 @@ class Spec004FunctionalTest extends FunctionalTestBase {
     }
 
     private void voteAndAdvance(String alice, String bob, int listId, int round) {
-        List<String> pool = client.getActiveList(alice).jsonPath().getList("currentPool");
+        List<String> pool = client.getListById(alice, listId).jsonPath().getList("currentPool");
         List<String> reversed = new ArrayList<>(pool);
         Collections.reverse(reversed);
 

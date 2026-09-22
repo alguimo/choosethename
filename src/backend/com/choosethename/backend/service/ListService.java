@@ -30,8 +30,6 @@ public class ListService {
     private static final int CODE_VALIDITY_SECONDS = 48 * 3600;
     private static final int MAX_MEMBERS = 5;
     private static final String CODE_PATTERN = "^[A-Za-z0-9]{6}$";
-    private static final List<ListPhase> ACTIVE_PHASES =
-            List.of(ListPhase.ADDITION, ListPhase.SELECTION, ListPhase.VOTING);
 
     private final ListRepository listRepository;
     private final ListMembershipRepository membershipRepository;
@@ -45,7 +43,6 @@ public class ListService {
         if (name == null || name.isBlank()) {
             throw new ListOperationException("List name cannot be blank");
         }
-        ensureNoActiveList(ownerId);
 
         ListEntity entity = new ListEntity();
         entity.setName(name.trim());
@@ -72,7 +69,6 @@ public class ListService {
     @Transactional
     public ListResponseDTO joinList(Long userId, String code) {
         validateCodeFormat(code);
-        ensureNoActiveList(userId);
 
         ListEntity list = listRepository.findByInvitationCodeForUpdate(code.toUpperCase(Locale.ROOT))
                 .orElseThrow(() -> new ListNotFoundException("List not found for invitation code"));
@@ -106,9 +102,20 @@ public class ListService {
         return toResponseDTO(list);
     }
 
-    public ListResponseDTO getActiveList(Long userId) {
-        ListEntity list = findActiveLists(userId).stream().findFirst()
-                .orElseThrow(() -> new ListNotFoundException("User is not a member of any active list"));
+    @Transactional(readOnly = true)
+    public List<ListResponseDTO> getListsForUser(Long userId) {
+        return listRepository.findListsForUser(userId, ListPhase.EXPIRED).stream()
+                .map(this::toResponseDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ListResponseDTO getListById(Long listId, Long userId) {
+        ListEntity list = listRepository.findById(listId)
+                .filter(entity -> entity.getPhase() != ListPhase.EXPIRED)
+                .filter(entity -> userId.equals(entity.getOwnerId())
+                        || membershipRepository.findByListIdAndUserId(entity.getId(), userId).isPresent())
+                .orElseThrow(() -> new ListNotFoundException("List not found"));
         return toResponseDTO(list);
     }
 
@@ -127,16 +134,6 @@ public class ListService {
         if (code == null || !code.matches(CODE_PATTERN)) {
             throw new ListOperationException("Invitation code must be exactly 6 alphanumeric characters");
         }
-    }
-
-    private void ensureNoActiveList(Long userId) {
-        if (!findActiveLists(userId).isEmpty()) {
-            throw new ListOperationException("User already belongs to an active list");
-        }
-    }
-
-    private List<ListEntity> findActiveLists(Long userId) {
-        return listRepository.findActiveListsForUser(userId, ACTIVE_PHASES);
     }
 
     private ListResponseDTO toResponseDTO(ListEntity list) {

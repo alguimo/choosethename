@@ -67,7 +67,8 @@ paths:
       summary: Create a new list
       description: |
         Creates a list in phase ADDITION. The creator becomes its owner and first member,
-        and a 6-character invitation code is generated (valid for 48 hours).
+        and a 6-character invitation code is generated (valid for 48 hours). A user may
+        create any number of lists, including while already belonging to other lists.
       operationId: createList
       security:
         - bearerAuth: []
@@ -88,15 +89,39 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    get:
+      tags:
+        - Lists
+      summary: List the current user's lists
+      description: |
+        Returns every list the caller belongs to (as owner or member) in phases ADDITION,
+        SELECTION, VOTING or COMPLETED, ordered by creation date descending. Includes
+        completed lists so their results remain consultable. Returns an empty array when
+        the user belongs to no visible list.
+      operationId: listMyLists
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/v1/lists/join:
     post:
       tags:
         - Lists
       summary: Join a list with an invitation code
       description: |
-        Joins a list by its 6-character invitation code. A user can only belong to one
-        active list and a list cannot exceed 5 members; the invitations are closed
-        automatically when the 5th member joins.
+        Joins a list by its 6-character invitation code. A user may belong to multiple
+        lists at once; joining another list does not end membership in existing ones.
+        A list cannot exceed 5 members; the invitations are closed automatically when
+        the 5th member joins.
       operationId: joinList
       security:
         - bearerAuth: []
@@ -119,18 +144,24 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/v1/lists/active:
+  /api/v1/lists/{id}:
     get:
       tags:
         - Lists
-      summary: Get the current user's active list
-      description: Returns the first active list (ADDITION, SELECTION or VOTING) the user belongs to.
-      operationId: getActiveList
+      summary: Get a list by id
+      description: |
+        Returns the list details when the caller is the owner or a member and the list is
+        not EXPIRED. A COMPLETED list remains retrievable by its members. Returns 404 for
+        non-members, non-existent ids, and EXPIRED lists so that list existence is not
+        leaked.
+      operationId: getListById
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
       responses:
         '200':
-          description: Active list
+          description: The list details
           content:
             application/json:
               schema:

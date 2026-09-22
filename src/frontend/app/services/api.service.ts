@@ -10,6 +10,7 @@ import {
   ListResponse,
   ResultsResponse,
   SelectionResponse,
+  UserProfile,
   VoteRequest,
 } from '../models/api.models';
 
@@ -24,6 +25,10 @@ export class ApiService {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, credentials);
   }
 
+  register(credentials: Credentials): Observable<UserProfile> {
+    return this.http.post<UserProfile>(`${this.baseUrl}/auth/register`, credentials);
+  }
+
   createList(request: CreateListRequest): Observable<ListResponse> {
     return this.http.post<ListResponse>(`${this.baseUrl}/lists`, request);
   }
@@ -32,8 +37,12 @@ export class ApiService {
     return this.http.post<ListResponse>(`${this.baseUrl}/lists/join`, request);
   }
 
-  getActiveList(): Observable<ListResponse> {
-    return this.http.get<ListResponse>(`${this.baseUrl}/lists/active`);
+  getMyLists(): Observable<ListResponse[]> {
+    return this.http.get<ListResponse[]>(`${this.baseUrl}/lists`);
+  }
+
+  getListById(id: string): Observable<ListResponse> {
+    return this.http.get<ListResponse>(`${this.baseUrl}/lists/${id}`);
   }
 
   closeInvitations(id: string): Observable<ListResponse> {

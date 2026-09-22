@@ -47,7 +47,7 @@ class Spec003FunctionalTest extends FunctionalTestBase {
 
         // FR-4: one finish does not transition yet
         client.finishAddition(alice, listId).then().statusCode(200);
-        client.getActiveList(alice).then()
+        client.getListById(alice, listId).then()
                 .statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("ADDITION"));
 
@@ -55,7 +55,7 @@ class Spec003FunctionalTest extends FunctionalTestBase {
         client.finishAddition(bob, listId).then().statusCode(200);
 
         // FR-4 + Spec 002 FR-14: both finished => SELECTION and invitations auto-closed
-        client.getActiveList(alice).then()
+        client.getListById(alice, listId).then()
                 .statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("SELECTION"))
                 .body("invitationsOpen", org.hamcrest.Matchers.is(false));
@@ -77,11 +77,11 @@ class Spec003FunctionalTest extends FunctionalTestBase {
 
         // FR-7: both complete selection => VOTING
         client.completeSelection(alice, listId).then().statusCode(200);
-        client.getActiveList(alice).then()
+        client.getListById(alice, listId).then()
                 .statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("SELECTION"));
         client.completeSelection(bob, listId).then().statusCode(200);
-        client.getActiveList(alice).then()
+        client.getListById(alice, listId).then()
                 .statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("VOTING"));
     }
@@ -102,7 +102,7 @@ class Spec003FunctionalTest extends FunctionalTestBase {
                 .body("error", org.hamcrest.Matchers.equalTo(
                         "At least one name must be provided to proceed to the selection phase."));
         client.finishAddition(dave, listId).then().statusCode(400);
-        client.getActiveList(carol).then()
+        client.getListById(carol, listId).then()
                 .statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("ADDITION"));
     }
@@ -117,7 +117,7 @@ class Spec003FunctionalTest extends FunctionalTestBase {
         int listId = created.jsonPath().getInt("id");
         String code = created.jsonPath().getString("invitationCode");
         client.joinList(joiner, code).then().statusCode(200);
-        client.getActiveList(owner).then().statusCode(200).body("phase", org.hamcrest.Matchers.equalTo("ADDITION"));
+        client.getListById(owner, listId).then().statusCode(200).body("phase", org.hamcrest.Matchers.equalTo("ADDITION"));
 
         // FR-8: age the list beyond 48 hours and run the scheduler tick
         ListEntity entity = listRepository.findById((long) listId).orElseThrow();
@@ -126,7 +126,7 @@ class Spec003FunctionalTest extends FunctionalTestBase {
         phaseTransitionService.expireStaleAdditionLists();
 
         // Terminal EXPIRED is no longer an active list
-        client.getActiveList(owner).then().statusCode(404);
+        client.getListById(owner, listId).then().statusCode(404);
         assertThat(listRepository.findById((long) listId).orElseThrow().getPhase()).isEqualTo(ListPhase.EXPIRED);
     }
 }

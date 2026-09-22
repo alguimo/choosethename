@@ -69,7 +69,7 @@ class Spec004IntegrationTest {
         completeSelection(alice, listId);
         completeSelection(bob, listId);
 
-        Response active = getActive(alice);
+        Response active = getList(alice, listId);
         assertThat(active.jsonPath().getString("phase")).isEqualTo("VOTING");
         assertThat(active.jsonPath().getInt("currentRound")).isEqualTo(1);
         assertThat(active.jsonPath().getInt("totalRounds")).isEqualTo(2);
@@ -92,7 +92,7 @@ class Spec004IntegrationTest {
 
         // One of two votes does not advance the round
         vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
-        assertThat(getActive(alice).jsonPath().getInt("currentRound")).isEqualTo(1);
+        assertThat(getList(alice, listId).jsonPath().getInt("currentRound")).isEqualTo(1);
 
         // Re-vote overwrites without advancing
         vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
@@ -101,7 +101,7 @@ class Spec004IntegrationTest {
 
         // Second vote advances to round 2 (caps keep all four names)
         vote(bob, listId, 1, List.of("maria", "juan", "lucia", "sofia")).then().statusCode(200);
-        active = getActive(alice);
+        active = getList(alice, listId);
         assertThat(active.jsonPath().getString("phase")).isEqualTo("VOTING");
         assertThat(active.jsonPath().getInt("currentRound")).isEqualTo(2);
         assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "maria", "juan", "sofia");
@@ -143,18 +143,18 @@ class Spec004IntegrationTest {
         completeSelection(alice, listId);
         completeSelection(bob, listId);
 
-        Response active = getActive(alice);
+        Response active = getList(alice, listId);
         assertThat(active.jsonPath().getString("phase")).isEqualTo("VOTING");
         assertThat(active.jsonPath().getInt("totalRounds")).isEqualTo(3);
         assertThat(active.jsonPath().getList("currentPool")).hasSize(16);
 
         voteAndAdvance(alice, bob, listId, 1, 16);
-        assertThat(getActive(alice).jsonPath().getList("currentPool")).hasSize(10);
+        assertThat(getList(alice, listId).jsonPath().getList("currentPool")).hasSize(10);
 
         voteAndAdvance(alice, bob, listId, 2, 10);
-        assertThat(getActive(alice).jsonPath().getList("currentPool")).hasSize(5);
+        assertThat(getList(alice, listId).jsonPath().getList("currentPool")).hasSize(5);
 
-        List<String> finalPool = getActive(alice).jsonPath().getList("currentPool");
+        List<String> finalPool = getList(alice, listId).jsonPath().getList("currentPool");
         vote(alice, listId, 3, finalPool).then().statusCode(200);
         vote(bob, listId, 3, finalPool).then().statusCode(200);
 
@@ -177,7 +177,7 @@ class Spec004IntegrationTest {
     }
 
     private void voteAndAdvance(String alice, String bob, int listId, int round, int expectedPoolSize) {
-        List<String> pool = getActive(alice).jsonPath().getList("currentPool");
+        List<String> pool = getList(alice, listId).jsonPath().getList("currentPool");
         assertThat(pool).hasSize(expectedPoolSize);
         List<String> reversed = new ArrayList<>(pool);
         Collections.reverse(reversed);
@@ -255,10 +255,10 @@ class Spec004IntegrationTest {
             .then().statusCode(200);
     }
 
-    private Response getActive(String token) {
+    private Response getList(String token, int listId) {
         return given()
             .header("Authorization", "Bearer " + token)
-            .get("/api/v1/lists/active");
+            .get("/api/v1/lists/" + listId);
     }
 
     private Response vote(String token, int listId, int round, List<String> rankings) {

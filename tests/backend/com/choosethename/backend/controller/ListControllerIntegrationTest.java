@@ -94,8 +94,10 @@ class ListControllerIntegrationTest {
         assertThat(created.jsonPath().getString("ownerUsername")).isEqualTo("alvaro_ts");
         assertThat(created.jsonPath().getList("members")).containsExactly("alvaro_ts");
 
-        // --- TS-2: Create again while already having an active list (400) ---
-        createList(alvaro, "Second List").then().statusCode(400);
+        // --- TS-2: Create another list while already belonging to one (201) ---
+        Response secondList = createList(alvaro, "Second List");
+        secondList.then().statusCode(201);
+        int secondListId = secondList.jsonPath().getInt("id");
 
         // --- TS-3: Create with blank name (400) ---
         createList(maria, "   ").then().statusCode(400);
@@ -155,24 +157,43 @@ class ListControllerIntegrationTest {
             .patch("/api/v1/lists/" + alvaroListId + "/close-invitations")
             .then().statusCode(403);
 
-        // --- TS-13: Fetch active list with complete details (200) ---
-        Response active = given()
+        // --- TS-15: Fetch a list by id as a member with complete details (200) ---
+        Response detail = given()
             .header("Authorization", "Bearer " + alvaro)
-            .get("/api/v1/lists/active");
-        active.then().statusCode(200);
-        assertThat(active.jsonPath().getInt("id")).isEqualTo(alvaroListId);
-        assertThat(active.jsonPath().getString("name")).isEqualTo("Baby Names 2026");
-        assertThat(active.jsonPath().getString("ownerUsername")).isEqualTo("alvaro_ts");
-        assertThat(active.jsonPath().getString("phase")).isEqualTo("ADDITION");
-        assertThat(active.jsonPath().getString("invitationCode")).isEqualTo(code);
-        assertThat(active.jsonPath().getBoolean("invitationsOpen")).isFalse();
-        assertThat(active.jsonPath().getList("members"))
+            .get("/api/v1/lists/" + alvaroListId);
+        detail.then().statusCode(200);
+        assertThat(detail.jsonPath().getInt("id")).isEqualTo(alvaroListId);
+        assertThat(detail.jsonPath().getString("name")).isEqualTo("Baby Names 2026");
+        assertThat(detail.jsonPath().getString("ownerUsername")).isEqualTo("alvaro_ts");
+        assertThat(detail.jsonPath().getString("phase")).isEqualTo("ADDITION");
+        assertThat(detail.jsonPath().getString("invitationCode")).isEqualTo(code);
+        assertThat(detail.jsonPath().getBoolean("invitationsOpen")).isFalse();
+        assertThat(detail.jsonPath().getList("members"))
                 .containsExactlyInAnyOrder("alvaro_ts", "maria_ts", "carlos_ts", "david_ts", "elena_ts");
 
-        // --- TS-14: Fetch active list when user has no active list (404) ---
+        // --- TS-14: Fetch my lists returns every list the user belongs to (200) ---
+        Response myLists = given()
+            .header("Authorization", "Bearer " + alvaro)
+            .get("/api/v1/lists");
+        myLists.then().statusCode(200);
+        assertThat(myLists.jsonPath().getList("id")).contains(alvaroListId, secondListId);
+
+        // --- TS-13: A user who belongs to no list gets an empty array (200) ---
         given()
             .header("Authorization", "Bearer " + gema)
-            .get("/api/v1/lists/active")
+            .get("/api/v1/lists")
+            .then().statusCode(200).body("$", org.hamcrest.Matchers.empty());
+
+        // --- TS-16: Fetch a list as a non-member (404) ---
+        given()
+            .header("Authorization", "Bearer " + gema)
+            .get("/api/v1/lists/" + alvaroListId)
+            .then().statusCode(404);
+
+        // --- TS-17: Fetch a non-existent list (404) ---
+        given()
+            .header("Authorization", "Bearer " + alvaro)
+            .get("/api/v1/lists/999999")
             .then().statusCode(404);
 
         // --- NFR-1: Endpoints require valid JWT (401) ---
@@ -180,12 +201,13 @@ class ListControllerIntegrationTest {
             .body(Map.of("name", "No Auth"))
             .post("/api/v1/lists")
             .then().statusCode(401);
-        given().get("/api/v1/lists/active").then().statusCode(401);
+        given().get("/api/v1/lists").then().statusCode(401);
+        given().get("/api/v1/lists/" + alvaroListId).then().statusCode(401);
 
         // --- NFR-1/Spec: users only fetch lists they belong to (404 when not a member) ---
         given()
             .header("Authorization", "Bearer " + juan)
-            .get("/api/v1/lists/active")
+            .get("/api/v1/lists/" + alvaroListId)
             .then().statusCode(404);
     }
 }

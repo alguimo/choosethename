@@ -26,6 +26,15 @@ import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.
     <section class="dashboard">
       <h2 class="dashboard__title">Mis listas</h2>
 
+      <div class="dashboard__actions">
+        <ui-button label="Crear lista nueva" (clicked)="openCreateModal()"></ui-button>
+        <ui-button
+          label="Unirse con código"
+          variant="secondary"
+          (clicked)="openJoinModal()"
+        ></ui-button>
+      </div>
+
       @if (error()) {
         <ui-validation-message type="error" [message]="error()!" />
       }
@@ -34,28 +43,19 @@ import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.
         <p class="dashboard__loading">Cargando...</p>
       }
 
-      @if (activeList(); as list) {
+      @if (!loading() && !error() && lists().length === 0) {
+        <div class="dashboard__empty">
+          <p class="dashboard__empty-text">No tienes ninguna lista</p>
+        </div>
+      }
+
+      @for (list of lists(); track list.id) {
         <ui-list-card
           [title]="list.name"
           [phase]="list.phase"
           [memberCount]="list.members.length"
-          (clicked)="onCardClick()"
+          (clicked)="onCardClick(list)"
         />
-      } @else if (!loading() && !error()) {
-        <div class="dashboard__empty">
-          <p class="dashboard__empty-text">No tienes ninguna lista activa.</p>
-          <div class="dashboard__actions">
-            <ui-button
-              label="Crear lista nueva"
-              (clicked)="openCreateModal()"
-            ></ui-button>
-            <ui-button
-              label="Unirse con código"
-              variant="secondary"
-              (clicked)="openJoinModal()"
-            ></ui-button>
-          </div>
-        </div>
       }
 
       <ui-modal title="Crear lista nueva" [visible]="showCreateModal()" (closed)="closeCreateModal()">
@@ -135,6 +135,12 @@ import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.
         color: var(--ui-color-on-surface-variant);
       }
 
+      .dashboard__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--ui-spacing-sm);
+      }
+
       .dashboard__empty {
         display: flex;
         flex-direction: column;
@@ -149,13 +155,6 @@ import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.
         margin: 0;
         font-family: var(--ui-font-family);
         color: var(--ui-color-on-surface-variant);
-      }
-
-      .dashboard__actions {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: var(--ui-spacing-sm);
       }
 
       .dashboard__modal-actions {
@@ -173,7 +172,7 @@ export class DashboardComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
   private readonly router = inject(Router);
 
-  readonly activeList = signal<ListResponse | null>(null);
+  readonly lists = signal<ListResponse[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly showCreateModal = signal(false);
@@ -192,15 +191,15 @@ export class DashboardComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadActiveList();
+    this.loadLists();
   }
 
-  loadActiveList(): void {
+  loadLists(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.dashboardService.getActiveList().subscribe({
-      next: (list) => {
-        this.activeList.set(list);
+    this.dashboardService.getMyLists().subscribe({
+      next: (lists) => {
+        this.lists.set(lists);
         this.loading.set(false);
       },
       error: () => {
@@ -210,27 +209,21 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  onCardClick(): void {
-    this.dashboardService.invalidate();
-    this.dashboardService.getActiveList().subscribe({
-      next: (fresh) => {
-        if (fresh) {
-          this.activeList.set(fresh);
-          if (fresh.phase === 'ADDITION') {
-            this.router.navigate(['/lists', fresh.id, 'suggestion']);
-          } else if (fresh.phase === 'SELECTION') {
-            this.router.navigate(['/lists', fresh.id, 'selection']);
-          } else if (fresh.phase === 'VOTING') {
-            this.router.navigate(['/lists', fresh.id, 'vote']);
-          } else if (fresh.phase === 'COMPLETED') {
-            this.router.navigate(['/lists', fresh.id, 'results']);
-          }
-        }
-      },
-      error: () => {
-        this.error.set('Ha habido un error, inténtelo de nuevo');
-      },
-    });
+  onCardClick(list: ListResponse): void {
+    this.router.navigate(['/lists', list.id, this.viewForPhase(list.phase)]);
+  }
+
+  private viewForPhase(phase: string): string {
+    switch (phase) {
+      case 'SELECTION':
+        return 'selection';
+      case 'VOTING':
+        return 'vote';
+      case 'COMPLETED':
+        return 'results';
+      default:
+        return 'suggestion';
+    }
   }
 
   openCreateModal(): void {

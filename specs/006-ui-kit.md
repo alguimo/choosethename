@@ -144,6 +144,11 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **FR-37**: THE SYSTEM MUST trap focus within the modal when it is visible and restore focus to the trigger element when closed.
 *   **FR-38**: THE SYSTEM MUST render a backdrop overlay that prevents interaction with content behind the modal.
 
+#### 4.3 AppBarComponent (`ui-app-bar`)
+*   **FR-39**: THE SYSTEM MUST provide a `ui-app-bar` component with inputs: `title` (string), `logoutLabel` (string).
+*   **FR-40**: THE SYSTEM MUST emit a `titleClicked` event when the title is activated and a `logoutClicked` event when the logout action is activated.
+*   **FR-41**: THE SYSTEM MUST render the title on the left and the logout action on the right as a presentational bar with no routing or authentication logic.
+
 ---
 
 ## Non-Functional Requirements
@@ -192,6 +197,7 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **TS-15**: `ui-modal` emits `closed` on close button click.
 *   **TS-16**: `ui-modal` traps focus when visible and restores focus when closed.
 *   **TS-17**: All atom components render without errors when minimal inputs are provided.
+*   **TS-18**: `ui-app-bar` renders the title and logout label, and emits `titleClicked`/`logoutClicked` on activation.
 
 ---
 
@@ -200,6 +206,6 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   Design token SCSS file (`_variables.scss`) with all variables defined and documented.
 *   All atom components implemented (Button, InputField, IconButton, Badge, ValidationMessage) with unit tests.
 *   All molecule components implemented (NameInputRow, ListCard, PhaseIndicator, RoundIndicator) with unit tests.
-*   All organism components implemented (DraggableRankingList, Modal) with unit tests.
+*   All organism components implemented (DraggableRankingList, Modal, AppBar) with unit tests.
 *   Full test suite passing (`npm test`) with zero lint warnings (`npm run lint`).
 *   Components usable from the main application via direct import (no barrel-export configuration required for in-project use).

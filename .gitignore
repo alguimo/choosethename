@@ -30,6 +30,7 @@ yarn-error.log
 .history/*
 
 # Miscellaneous
+/TODO.md
 /.angular/cache
 .sass-cache/
 /connect.lock
@@ -65,3 +66,4 @@ bun-error.log*
 bun-info.log*
 bun-warn.log*
 
+TODO.md

@@ -3,6 +3,12 @@ export interface Credentials {
   password: string;
 }
 
+export interface UserProfile {
+  id: number;
+  username: string;
+  role: 'ADMIN' | 'PARTICIPANT';
+}
+
 export interface AuthResponse {
   accessToken: string;
   tokenType: string;

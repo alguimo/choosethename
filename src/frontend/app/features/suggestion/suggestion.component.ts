@@ -219,7 +219,7 @@ export class SuggestionComponent implements OnInit {
   }
 
   private loadListState(): void {
-    this.apiService.getActiveList().subscribe({
+    this.apiService.getListById(this.listId).subscribe({
       next: (list) => {
         if (list.phase === 'ADDITION') {
           this.restoreLocalSuggestions();

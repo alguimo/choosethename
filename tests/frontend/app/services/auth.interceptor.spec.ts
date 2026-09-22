@@ -28,9 +28,9 @@ describe('authInterceptor', () => {
   it('should attach the Authorization Bearer header when a token exists', () => {
     authService.setToken('fake-token');
 
-    httpClient.get('/api/v1/lists/active').subscribe();
+    httpClient.get('/api/v1/lists').subscribe();
 
-    const req = httpTesting.expectOne('/api/v1/lists/active');
+    const req = httpTesting.expectOne('/api/v1/lists');
     expect(req.request.headers.get('Authorization')).toBe('Bearer fake-token');
     req.flush({});
   });
@@ -38,9 +38,9 @@ describe('authInterceptor', () => {
   it('should not attach an Authorization header when no token exists', () => {
     authService.logout();
 
-    httpClient.get('/api/v1/lists/active').subscribe();
+    httpClient.get('/api/v1/lists').subscribe();
 
-    const req = httpTesting.expectOne('/api/v1/lists/active');
+    const req = httpTesting.expectOne('/api/v1/lists');
     expect(req.request.headers.has('Authorization')).toBeFalse();
     req.flush({});
   });
