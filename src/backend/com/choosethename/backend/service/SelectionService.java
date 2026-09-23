@@ -61,6 +61,9 @@ public class SelectionService {
         Map<String, Integer> presence = presencePerName(allNames);
 
         List<NameResponseDTO.NameEntry> commonNames = new ArrayList<>();
+        Set<String> adoptedSet = sharedNamePoolRepository.findByListIdOrderByIdAsc(listId).stream()
+                .map(SharedNamePoolEntity::getNormalizedName)
+                .collect(java.util.stream.Collectors.toSet());
         for (Map.Entry<String, Integer> entry : presence.entrySet()) {
             if (entry.getValue() > majorityThreshold) {
                 String normalized = entry.getKey();
@@ -68,7 +71,10 @@ public class SelectionService {
                         .filter(n -> n.getNormalizedName().equals(normalized))
                         .findFirst()
                         .orElseThrow();
-                commonNames.add(new NameResponseDTO.NameEntry(sample.getName(), sample.getNormalizedName()));
+                NameResponseDTO.NameEntry nameEntry = new NameResponseDTO.NameEntry(
+                        sample.getName(), sample.getNormalizedName());
+                nameEntry.setAdopted(true);
+                commonNames.add(nameEntry);
             }
         }
 
@@ -80,7 +86,10 @@ public class SelectionService {
             String normalized = other.getNormalizedName();
             boolean common = presence.getOrDefault(normalized, 0) > majorityThreshold;
             if (!myNormalized.contains(normalized) && !common) {
-                fadedSuggestions.add(entry(other));
+                NameResponseDTO.NameEntry faded = new NameResponseDTO.NameEntry(
+                        other.getName(), other.getNormalizedName());
+                faded.setAdopted(adoptedSet.contains(normalized));
+                fadedSuggestions.add(faded);
             }
         }
 

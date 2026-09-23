@@ -23,6 +23,7 @@ const LIST: ListResponse = {
   totalRounds: 3,
   currentPool: ['A', 'B', 'C'],
   members: [],
+  myStepCompleted: false,
 };
 
 const apiError = (status: number) =>
@@ -231,5 +232,26 @@ describe('VoteComponent', () => {
     fixture.detectChanges();
 
     expect(component.ranking()).toEqual(['C', 'A', 'B']);
+  });
+
+  it('FR-84: should switch to the read-only waiting state when the own vote is completed', () => {
+    apiSpy.getListById.and.returnValue(of({ ...LIST, myStepCompleted: true }));
+
+    const freshFixture = TestBed.createComponent(VoteComponent);
+    const freshComponent = freshFixture.componentInstance;
+    freshFixture.detectChanges();
+
+    expect(freshComponent.waiting()).toBeTrue();
+    expect((freshFixture.nativeElement as HTMLElement).textContent).toContain(
+      'Esperando a que el resto complete la fase',
+    );
+
+    const list = freshFixture.debugElement.query(
+      By.directive(UiDraggableRankingListComponent),
+    ).componentInstance as UiDraggableRankingListComponent;
+    expect(list.disabled()).toBeTrue();
+
+    freshComponent.submitVote();
+    expect(apiSpy.submitVote).not.toHaveBeenCalled();
   });
 });

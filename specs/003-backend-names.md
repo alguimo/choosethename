@@ -33,7 +33,9 @@ All phase transitions are final and irreversible.
 
 ### 2. Selection and Matching Phase
 * **FR-5**: WHILE the list is in the "SELECTION" phase, THE SYSTEM MUST return a list containing "Common Names" (normalized matches between both pools) and "Faded Suggestions" (names existing in only one pool).
-* **FR-6**: WHEN a Participant requests to adopt a name from the faded suggestions, THE SYSTEM MUST add it to the shared list pool (normalized per NFR-1).
+* **FR-6**: WHEN a Participant requests to adopt a name from the faded suggestions, THE SYSTEM MUST add it to the shared list pool (normalized per NFR-1). Adoption is one-way: no un-adopt operation exists.
+* **FR-10**: WHEN the system returns the faded suggestions for a Participant, THE SYSTEM MUST include an `adopted` flag per suggestion that is `true` IF that name is already present in the shared list pool and `false` otherwise.
+* **FR-11**: IF the list phase transitions from "ADDITION" to "SELECTION", THEN the system MUST consider every "Common Name" as automatically part of the shared list pool.
 
 ### 3. Phase Transitions and Timeout
 * **FR-4**: WHEN both participants mark their addition phase as "FINISHED", THE SYSTEM MUST transition the list phase to "SELECTION". This transition is final and irreversible.
@@ -51,6 +53,8 @@ All phase transitions are final and irreversible.
 * **Name empty after normalization**: IF a submitted name normalizes to an empty string (e.g., input consisting only of whitespace), THEN THE SYSTEM MUST reject it with a 422 Unprocessable Entity.
 * **Whitespace**: Consecutive whitespace within a name is collapsed into a single space (NFR-1). A name consisting only of whitespace normalizes to an empty string and is rejected (see above).
 * **Zero Matches**: IF normalized names do not overlap between pools, THEN the "Common Names" list is returned empty, and participants must rely on the "Faded Suggestions" list to form the shared pool.
+* **Common Names in the Shared Pool**: Common names are automatically part of the shared pool from the SELECTION phase (FR-11) and MUST NOT require adoption; adopting a common name is rejected. The voting pool (Spec 004) MUST contain every common name plus every adopted faded name.
+* **Adopted Flag Consistency**: A faded suggestion flagged as `adopted` remains listed in the "Faded Suggestions" section so the Participant can see their decision; it is rendered as selected by the frontend (Spec 005).
 * **Concurrent transition**: Only one transition succeeds; the losing request receives a 409 Conflict (NFR-4).
 
 ## Out of Scope

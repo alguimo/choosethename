@@ -97,6 +97,7 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **FR-12**: THE SYSTEM MUST provide a `ui-input-field` component with inputs: `label` (string), `placeholder` (string), `value` (string), `error` (string), `disabled` (boolean), `maxLength` (number).
 *   **FR-13**: THE SYSTEM MUST display a red border and an error message below the input when the `error` input is provided.
 *   **FR-14**: THE SYSTEM MUST emit a `valueChanged` event on every input change and a `submitted` event on Enter key press.
+*   **FR-42**: WHEN the `type` input is `password`, THE SYSTEM MUST render a visibility toggle button that switches the control's `type` between `password` and `text`, announcing the state with `aria-pressed` and switching the `aria-label` between "Mostrar contraseña" and "Ocultar contraseña".
 
 #### 2.3 IconButtonComponent (`ui-icon-button`)
 *   **FR-15**: THE SYSTEM MUST provide a `ui-icon-button` component with inputs: `icon` (string — Material icon name), `tooltip` (string), `disabled` (boolean), `variant` (enum: `default`, `danger`).
@@ -120,6 +121,7 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 #### 3.2 ListCardComponent (`ui-list-card`)
 *   **FR-24**: THE SYSTEM MUST provide a `ui-list-card` component with inputs: `title` (string), `phase` (string), `memberCount` (number).
 *   **FR-25**: THE SYSTEM MUST render a clickable card displaying the list title, a `ui-badge` for the current phase, and a member count indicator.
+*   **FR-43**: THE SYSTEM MUST provide a `ui-list-card` component with optional inputs `invitationCode` (string) and `invitationsOpen` (boolean). WHEN `invitationsOpen` is `true`, THE SYSTEM MUST render an "Invitar" action that emits an `inviteClicked` output.
 
 #### 3.3 PhaseIndicatorComponent (`ui-phase-indicator`)
 *   **FR-26**: THE SYSTEM MUST provide a `ui-phase-indicator` component with inputs: `phase` (string), `totalPhases` (number), `currentPhase` (number).
@@ -128,6 +130,16 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 #### 3.4 RoundIndicatorComponent (`ui-round-indicator`)
 *   **FR-28**: THE SYSTEM MUST provide a `ui-round-indicator` component with inputs: `currentRound` (number), `totalRounds` (number).
 *   **FR-29**: THE SYSTEM MUST render a compact display showing "Ronda X de Y" with a progress bar.
+
+#### 3.5 CopyFieldComponent (`ui-copy-field`)
+*   **FR-44**: THE SYSTEM MUST provide a `ui-copy-field` component with inputs: `label` (string), `value` (string).
+*   **FR-45**: WHEN the Participant activates the "Copiar" action, THE SYSTEM MUST copy `value` to the clipboard and emit a `copied` output.
+*   **FR-46**: IF the clipboard API is unavailable or the copy fails, THEN THE SYSTEM MUST select the displayed `value` for manual copying and emit a `copyFailed` output.
+
+#### 3.6 InviteModalComponent (`ui-invite-modal`)
+*   **FR-48**: THE SYSTEM MUST provide a `ui-invite-modal` molecule composing `ui-modal`, `ui-copy-field` and `ui-validation-message`, with inputs: `title` (string — invitation title, e.g. "Invitar a {list name}"), `code` (string), `visible` (boolean), and a `closed` output.
+*   **FR-49**: WHEN the Participant activates "Copiar", THE SYSTEM MUST display the confirmation message ("Código copiado").
+*   **FR-50**: IF the clipboard copy fails or is unavailable, THEN THE SYSTEM MUST display the manual-copy message ("No se ha podido copiar automáticamente. Copia el código manualmente.").
 
 ### 4. Organism Components
 
@@ -148,6 +160,7 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **FR-39**: THE SYSTEM MUST provide a `ui-app-bar` component with inputs: `title` (string), `logoutLabel` (string).
 *   **FR-40**: THE SYSTEM MUST emit a `titleClicked` event when the title is activated and a `logoutClicked` event when the logout action is activated.
 *   **FR-41**: THE SYSTEM MUST render the title on the left and the logout action on the right as a presentational bar with no routing or authentication logic.
+*   **FR-47**: THE SYSTEM MUST provide a `ui-app-bar` component with optional inputs `userLabel` (string) and `showAdmin` (boolean), and an `adminClicked` output. WHEN `showAdmin` is `true`, THE SYSTEM MUST render an admin action that emits `adminClicked` when activated.
 
 ---
 
@@ -167,6 +180,9 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **Rapid Sequential Submissions in NameInputRow**: THE SYSTEM MUST debounce or disable the submit action for 300ms after each submission to prevent duplicate emissions.
 *   **Modal Opened While Another Modal Is Open**: THE SYSTEM MUST stack modals (newest on top) and only trap focus within the topmost modal.
 *   **Theme Tokens Not Defined**: IF a consuming application does not define the CSS custom properties, THEN THE SYSTEM MUST fall back to the default values defined in `_variables.scss`.
+*   **Clipboard Unavailable in CopyField**: `ui-copy-field` selects its `value` for manual copy and emits `copyFailed` (FR-46).
+*   **Password Visibility Toggle Accessibility**: The toggle MUST keep focus after activation and announce its state via `aria-pressed`/`aria-label` (FR-42).
+*   **Very Long Invitation Code Display**: `ui-copy-field` MUST truncate an over-long displayed value with an ellipsis while keeping the full value for copy.
 
 ---
 
@@ -198,6 +214,11 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **TS-16**: `ui-modal` traps focus when visible and restores focus when closed.
 *   **TS-17**: All atom components render without errors when minimal inputs are provided.
 *   **TS-18**: `ui-app-bar` renders the title and logout label, and emits `titleClicked`/`logoutClicked` on activation.
+*   **TS-19**: `ui-input-field` with `type="password"` renders a visibility toggle; activating it flips the input type and `aria-pressed`.
+*   **TS-20**: `ui-list-card` with `invitationsOpen=true` renders "Invitar" and emits `inviteClicked`; with `invitationsOpen=false` it does not.
+*   **TS-21**: `ui-app-bar` with `showAdmin=true` renders the admin action and emits `adminClicked` on activation.
+*   **TS-22**: `ui-copy-field` copies `value` on "Copiar" and emits `copied`; with an unavailable clipboard it selects the value and emits `copyFailed`.
+*   **TS-23**: `ui-invite-modal` renders the title, code and copy action; it emits `closed` on close and shows the copied/manual-copy notices per FR-49/FR-50.
 
 ---
 
@@ -207,5 +228,7 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   All atom components implemented (Button, InputField, IconButton, Badge, ValidationMessage) with unit tests.
 *   All molecule components implemented (NameInputRow, ListCard, PhaseIndicator, RoundIndicator) with unit tests.
 *   All organism components implemented (DraggableRankingList, Modal, AppBar) with unit tests.
+*   The `ui-copy-field` molecule implemented with clipboard fallback (FR-44..FR-46) and unit tests.
+*   Input password visibility toggle, list-card invitation action, and app-bar admin action implemented (FR-42, FR-43, FR-47) with unit tests.
 *   Full test suite passing (`npm test`) with zero lint warnings (`npm run lint`).
 *   Components usable from the main application via direct import (no barrel-export configuration required for in-project use).

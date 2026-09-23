@@ -64,6 +64,21 @@ describe('RegisterComponent', () => {
     expect(component.error()).toBeNull();
   });
 
+  it('TS-52: should send the typed password verbatim (no trimming or transformation)', () => {
+    const password = 'Secreto 123';
+    component.registerForm.setValue({ username: 'alvaro', password });
+    apiServiceSpy.register.and.returnValue(
+      of({ id: 1, username: 'alvaro', role: 'PARTICIPANT' }),
+    );
+
+    component.onSubmit();
+
+    expect(apiServiceSpy.register).toHaveBeenCalledWith({
+      username: 'alvaro',
+      password,
+    });
+  });
+
   it('TS-32: should show the 409 error, retain the form values and not navigate', () => {
     component.registerForm.setValue({ username: 'alvaro', password: 'Secret12' });
     apiServiceSpy.register.and.returnValue(
@@ -91,6 +106,123 @@ describe('RegisterComponent', () => {
     expect(component.error()).toBe('Verifica los datos introducidos');
     expect(component.registerForm.value).toEqual({ username: 'alvaro', password: 'Secret12' });
     expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  it('TS-53: should map a 400 password-length message to the password field', () => {
+    component.registerForm.setValue({ username: 'alvaro', password: 'Secret12' });
+    apiServiceSpy.register.and.returnValue(
+      throwError(() =>
+        new HttpErrorResponse({
+          status: 400,
+          error: { error: 'Password must be at least 8 characters' },
+        }),
+      ),
+    );
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(component.error()).toBeNull();
+    expect(component.passwordError()).toBe('Mínimo 8 caracteres');
+    expect(fixture.nativeElement.textContent).toContain('Mínimo 8 caracteres');
+    expect(component.registerForm.value).toEqual({ username: 'alvaro', password: 'Secret12' });
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+  });
+
+  it('TS-53: should map a 400 uppercase message to the password field', () => {
+    component.registerForm.setValue({ username: 'alvaro', password: 'Secret12' });
+    apiServiceSpy.register.and.returnValue(
+      throwError(() =>
+        new HttpErrorResponse({
+          status: 400,
+          error: { error: 'Password must contain at least one uppercase letter' },
+        }),
+      ),
+    );
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(component.error()).toBeNull();
+    expect(component.passwordError()).toBe('Debe incluir una letra mayúscula');
+    expect(fixture.nativeElement.textContent).toContain('Debe incluir una letra mayúscula');
+  });
+
+  it('TS-53: should map a 400 digit message to the password field', () => {
+    component.registerForm.setValue({ username: 'alvaro', password: 'Secret12' });
+    apiServiceSpy.register.and.returnValue(
+      throwError(() =>
+        new HttpErrorResponse({
+          status: 400,
+          error: { error: 'Password must contain at least one digit' },
+        }),
+      ),
+    );
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(component.error()).toBeNull();
+    expect(component.passwordError()).toBe('Debe incluir un número');
+    expect(fixture.nativeElement.textContent).toContain('Debe incluir un número');
+  });
+
+  it('TS-54: should map a 400 empty-fields message to both fields', () => {
+    component.registerForm.setValue({ username: 'alvaro', password: 'Secret12' });
+    apiServiceSpy.register.and.returnValue(
+      throwError(() =>
+        new HttpErrorResponse({
+          status: 400,
+          error: { error: 'Username and password cannot be empty' },
+        }),
+      ),
+    );
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(component.error()).toBeNull();
+    expect(component.usernameError()).toBe('El usuario es obligatorio');
+    expect(component.passwordError()).toBe('La contraseña es obligatoria');
+    expect(fixture.nativeElement.textContent).toContain('El usuario es obligatorio');
+    expect(fixture.nativeElement.textContent).toContain('La contraseña es obligatoria');
+  });
+
+  it('TS-55: should show the generic error for an unrecognized 400 message', () => {
+    component.registerForm.setValue({ username: 'alvaro', password: 'Secret12' });
+    apiServiceSpy.register.and.returnValue(
+      throwError(() =>
+        new HttpErrorResponse({
+          status: 400,
+          error: { error: 'Some unexpected backend message' },
+        }),
+      ),
+    );
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(component.error()).toBe('Verifica los datos introducidos');
+    expect(component.passwordError()).toBe('');
+    expect(component.registerForm.value).toEqual({ username: 'alvaro', password: 'Secret12' });
+  });
+
+  it('TS-53: should clear the server-side field error when the password is edited', () => {
+    component.registerForm.setValue({ username: 'alvaro', password: 'Secret12' });
+    apiServiceSpy.register.and.returnValue(
+      throwError(() =>
+        new HttpErrorResponse({
+          status: 400,
+          error: { error: 'Password must be at least 8 characters' },
+        }),
+      ),
+    );
+
+    component.onSubmit();
+    expect(component.passwordError()).toBe('Mínimo 8 caracteres');
+
+    component.registerForm.controls['password'].setValue('NuevaClave1');
+    expect(component.passwordError()).toBe('');
   });
 
   it('TS-33: should show the minimum length message for a short password and send no request', () => {

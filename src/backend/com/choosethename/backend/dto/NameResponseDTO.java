@@ -15,6 +15,7 @@ public class NameResponseDTO {
     public static class NameEntry {
         private String name;
         private String normalizedName;
+        private boolean adopted;
 
         public NameEntry() {
         }

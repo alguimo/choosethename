@@ -12,5 +12,7 @@ public interface ListMapper {
     @Mapping(target = "currentRound", source = "entity.currentRound")
     @Mapping(target = "totalRounds", source = "entity.totalRounds")
     @Mapping(target = "currentPool", source = "currentPool")
-    ListResponseDTO toResponseDTO(ListEntity entity, List<String> members, String ownerUsername, List<String> currentPool);
+    @Mapping(target = "myStepCompleted", source = "myStepCompleted")
+    ListResponseDTO toResponseDTO(ListEntity entity, List<String> members, String ownerUsername,
+                                  List<String> currentPool, boolean myStepCompleted);
 }

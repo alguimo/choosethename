@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -63,7 +64,7 @@ class ListServiceJoinTest {
         when(listRepository.findByInvitationCodeForUpdate(anyString())).thenReturn(Optional.of(activeList()));
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(new User()));
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
                 .thenReturn(new ListResponseDTO());
     }
 
@@ -164,7 +165,7 @@ class ListServiceJoinTest {
         when(membershipRepository.countByListId(LIST_ID)).thenReturn(4L);
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(new User()));
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
                 .thenReturn(new ListResponseDTO());
 
         listService.joinList(USER_ID, CODE);

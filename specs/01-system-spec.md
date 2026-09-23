@@ -23,7 +23,8 @@ The system is built on two strictly decoupled layers communicating over stateles
   * `004-backend-voting.md` — voting rounds, Borda ranking, results, timeouts.
   * `005-frontend-ui.md` — application flows.
   * `006-ui-kit.md` — reusable component library (Atomic Design).
-  * `007-repository-restructuring.md` — the active spec for the repository layout refactoring.
+  * `007-repository-restructuring.md` — completed repository layout refactoring (specs/, src/, tests/).
+  * `008-admin-management.md` — administrator user management (user listing, password reset) and role exposure via `/auth/me`.
 
 ## Core Domain States
 A list progresses through the phases `ADDITION → SELECTION → VOTING → COMPLETED`, with a terminal `EXPIRED` state triggered by 48-hour inactivity timeouts. Voting is structured in rounds with a full ranking of the current pool per member; rounds advance only when all members have voted.

@@ -2,15 +2,19 @@ package com.choosethename.backend.service;
 
 import com.choosethename.backend.dto.ListMapper;
 import com.choosethename.backend.dto.ListResponseDTO;
+import com.choosethename.backend.dto.VoteJsonCodec;
 import com.choosethename.backend.exception.ListNotFoundException;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.ListMembershipEntity;
 import com.choosethename.backend.model.User;
+import com.choosethename.backend.model.VoteEntity;
+import com.choosethename.backend.model.VotingRoundEntity;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VoteRepository;
 import com.choosethename.backend.repository.VotingRoundRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -48,6 +53,7 @@ class ListServiceTest {
     @Mock private ListMapper listMapper;
     @Mock private UserRepository userRepository;
     @Mock private VotingRoundRepository votingRoundRepository;
+    @Mock private VoteRepository voteRepository;
     @InjectMocks private ListService listService;
 
     private User owner() {
@@ -58,7 +64,7 @@ class ListServiceTest {
     }
 
     private void stubResponseDto() {
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
                 .thenReturn(new ListResponseDTO());
     }
 
@@ -143,7 +149,7 @@ class ListServiceTest {
 
         assertThat(result).hasSize(2);
         verify(listMapper, org.mockito.Mockito.times(2))
-                .toResponseDTO(any(ListEntity.class), anyList(), any(), anyList());
+                .toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean());
     }
 
     @Test
@@ -169,7 +175,7 @@ class ListServiceTest {
         ListResponseDTO result = listService.getListById(1L, OWNER_ID);
 
         assertThat(result).isNotNull();
-        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList());
+        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList(), anyBoolean());
     }
 
     @Test
@@ -212,15 +218,112 @@ class ListServiceTest {
     }
 
     @Test
-    @DisplayName("FR-17: Throw 404 when the list is EXPIRED")
-    void shouldThrowNotFoundWhenListExpired() {
+    @DisplayName("FR-18: myStepCompleted is true for ADDITION when the member finished")
+    void shouldReportMyStepCompletedTrueOnAdditionFinished() {
         ListEntity list = new ListEntity();
         list.setId(1L);
         list.setOwnerId(OWNER_ID);
-        list.setPhase(ListPhase.EXPIRED);
+        list.setPhase(ListPhase.ADDITION);
+        ListMembershipEntity membership = new ListMembershipEntity();
+        membership.setListId(1L);
+        membership.setUserId(OWNER_ID);
+        membership.setFinishedAt(Instant.now());
         when(listRepository.findById(1L)).thenReturn(Optional.of(list));
+        when(membershipRepository.findByListIdAndUserId(1L, OWNER_ID)).thenReturn(Optional.of(membership));
+        when(membershipRepository.findByListId(1L)).thenReturn(List.of());
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
 
-        assertThatThrownBy(() -> listService.getListById(1L, OWNER_ID))
-                .isInstanceOf(ListNotFoundException.class);
+        ListResponseDTO result = new ListResponseDTO();
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
+                .thenReturn(result);
+
+        listService.getListById(1L, OWNER_ID);
+
+        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList(), eq(true));
+    }
+
+    @Test
+    @DisplayName("FR-18: myStepCompleted is false for ADDITION before finishing")
+    void shouldReportMyStepCompletedFalseOnAdditionOpen() {
+        ListEntity list = new ListEntity();
+        list.setId(1L);
+        list.setOwnerId(OWNER_ID);
+        list.setPhase(ListPhase.ADDITION);
+        ListMembershipEntity membership = new ListMembershipEntity();
+        membership.setListId(1L);
+        membership.setUserId(OWNER_ID);
+        when(listRepository.findById(1L)).thenReturn(Optional.of(list));
+        when(membershipRepository.findByListIdAndUserId(1L, OWNER_ID)).thenReturn(Optional.of(membership));
+        when(membershipRepository.findByListId(1L)).thenReturn(List.of());
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
+
+        ListResponseDTO result = new ListResponseDTO();
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
+                .thenReturn(result);
+
+        listService.getListById(1L, OWNER_ID);
+
+        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList(), eq(false));
+    }
+
+    @Test
+    @DisplayName("FR-7: myStepCompleted is true for VOTING when the user already voted in the current round")
+    void shouldReportMyStepCompletedTrueWhenAlreadyVoted() {
+        ListEntity list = new ListEntity();
+        list.setId(1L);
+        list.setOwnerId(OWNER_ID);
+        list.setPhase(ListPhase.VOTING);
+        list.setCurrentRound(1);
+        ListMembershipEntity membership = new ListMembershipEntity();
+        membership.setListId(1L);
+        membership.setUserId(OWNER_ID);
+        VotingRoundEntity round = new VotingRoundEntity();
+        round.setId(50L);
+        round.setPoolRankings(VoteJsonCodec.encode(List.of("lucia", "maria")));
+        when(listRepository.findById(1L)).thenReturn(Optional.of(list));
+        when(membershipRepository.findByListIdAndUserId(1L, OWNER_ID)).thenReturn(Optional.of(membership));
+        when(membershipRepository.findByListId(1L)).thenReturn(List.of());
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
+        when(votingRoundRepository.findByListIdAndRoundNumber(1L, 1)).thenReturn(Optional.of(round));
+        when(voteRepository.findByListIdAndUserIdAndRoundId(1L, OWNER_ID, 50L))
+                .thenReturn(Optional.of(new VoteEntity()));
+
+        ListResponseDTO result = new ListResponseDTO();
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
+                .thenReturn(result);
+
+        listService.getListById(1L, OWNER_ID);
+
+        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList(), eq(true));
+    }
+
+    @Test
+    @DisplayName("FR-7: myStepCompleted is false for VOTING when the user has not voted yet")
+    void shouldReportMyStepCompletedFalseWhenNotVoted() {
+        ListEntity list = new ListEntity();
+        list.setId(1L);
+        list.setOwnerId(OWNER_ID);
+        list.setPhase(ListPhase.VOTING);
+        list.setCurrentRound(1);
+        ListMembershipEntity membership = new ListMembershipEntity();
+        membership.setListId(1L);
+        membership.setUserId(OWNER_ID);
+        VotingRoundEntity round = new VotingRoundEntity();
+        round.setId(50L);
+        round.setPoolRankings(VoteJsonCodec.encode(List.of("lucia", "maria")));
+        when(listRepository.findById(1L)).thenReturn(Optional.of(list));
+        when(membershipRepository.findByListIdAndUserId(1L, OWNER_ID)).thenReturn(Optional.of(membership));
+        when(membershipRepository.findByListId(1L)).thenReturn(List.of());
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner()));
+        when(votingRoundRepository.findByListIdAndRoundNumber(1L, 1)).thenReturn(Optional.of(round));
+        when(voteRepository.findByListIdAndUserIdAndRoundId(1L, OWNER_ID, 50L)).thenReturn(Optional.empty());
+
+        ListResponseDTO result = new ListResponseDTO();
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
+                .thenReturn(result);
+
+        listService.getListById(1L, OWNER_ID);
+
+        verify(listMapper).toResponseDTO(eq(list), anyList(), eq("alvaro"), anyList(), eq(false));
     }
 }

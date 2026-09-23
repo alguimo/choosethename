@@ -34,40 +34,40 @@ class Spec004FunctionalTest extends FunctionalTestBase {
                 .body("phase", org.hamcrest.Matchers.equalTo("VOTING"))
                 .body("currentRound", org.hamcrest.Matchers.is(1))
                 .body("totalRounds", org.hamcrest.Matchers.is(2));
-        assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "sofia", "maria", "juan");
+        assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "sofia", "maria", "juan", "pablo");
 
         // Results not ready while VOTING => 409
         client.getResults(alice, listId).then().statusCode(409);
 
         // Non-members are forbidden => 403
-        client.submitVote(carol, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(403);
+        client.submitVote(carol, listId, 1, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(403);
         client.getResults(carol, listId).then().statusCode(403);
 
         // Partial ranking => 400, duplicate => 422, stale round => 409
         client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria")).then().statusCode(400);
         client.submitVote(alice, listId, 1, List.of("lucia", "lucia", "maria", "juan")).then().statusCode(422);
-        client.submitVote(alice, listId, 0, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(409);
+        client.submitVote(alice, listId, 0, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(409);
 
         // One vote does not advance the round
-        client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
+        client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(200);
         assertThat(client.getListById(alice, listId).jsonPath().getInt("currentRound")).isEqualTo(1);
 
         // Re-vote overwrites without advancing
-        client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
+        client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(200);
 
-        // Second vote advances to round 2 (cap 5 keeps all four names)
-        client.submitVote(bob, listId, 1, List.of("maria", "juan", "lucia", "sofia")).then().statusCode(200);
+        // Second vote advances to round 2 (cap 5 keeps all five names)
+        client.submitVote(bob, listId, 1, List.of("maria", "juan", "lucia", "sofia", "pablo")).then().statusCode(200);
         active = client.getListById(alice, listId);
         active.then().statusCode(200)
                 .body("currentRound", org.hamcrest.Matchers.is(2));
-        assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "maria", "juan", "sofia");
+        assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "maria", "juan", "sofia", "pablo");
 
         // Voting for a finalized round => 409
-        client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(409);
+        client.submitVote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(409);
 
         // Final round: second vote completes the list
-        client.submitVote(alice, listId, 2, List.of("lucia", "maria", "juan", "sofia")).then().statusCode(200);
-        client.submitVote(bob, listId, 2, List.of("lucia", "maria", "sofia", "juan")).then().statusCode(200);
+        client.submitVote(alice, listId, 2, List.of("lucia", "maria", "juan", "sofia", "pablo")).then().statusCode(200);
+        client.submitVote(bob, listId, 2, List.of("lucia", "maria", "sofia", "juan", "pablo")).then().statusCode(200);
         assertThat(listRepository.findById((long) listId).orElseThrow().getPhase()).isEqualTo(ListPhase.COMPLETED);
 
         // Top-3 with consolidated scores
@@ -75,11 +75,11 @@ class Spec004FunctionalTest extends FunctionalTestBase {
         results.then().statusCode(200);
         assertThat(results.jsonPath().getInt("results[0].rank")).isEqualTo(1);
         assertThat(results.jsonPath().getString("results[0].name")).isEqualTo("lucia");
-        assertThat(results.jsonPath().getInt("results[0].score")).isEqualTo(6);
+        assertThat(results.jsonPath().getInt("results[0].score")).isEqualTo(8);
         assertThat(results.jsonPath().getString("results[1].name")).isEqualTo("maria");
-        assertThat(results.jsonPath().getInt("results[1].score")).isEqualTo(4);
+        assertThat(results.jsonPath().getInt("results[1].score")).isEqualTo(6);
         assertThat(results.jsonPath().getString("results[2].name")).isEqualTo("juan");
-        assertThat(results.jsonPath().getInt("results[2].score")).isEqualTo(1);
+        assertThat(results.jsonPath().getInt("results[2].score")).isEqualTo(3);
         assertThat(results.jsonPath().getList("results")).hasSize(3);
     }
 
@@ -99,7 +99,7 @@ class Spec004FunctionalTest extends FunctionalTestBase {
         active.then().statusCode(200)
                 .body("phase", org.hamcrest.Matchers.equalTo("VOTING"))
                 .body("totalRounds", org.hamcrest.Matchers.is(3));
-        assertThat(active.jsonPath().getList("currentPool")).hasSize(16);
+        assertThat(active.jsonPath().getList("currentPool")).hasSize(17);
 
         voteAndAdvance(alice, bob, listId, 1);
         assertThat(client.getListById(alice, listId).jsonPath().getList("currentPool")).hasSize(10);

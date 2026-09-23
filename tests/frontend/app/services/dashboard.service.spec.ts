@@ -19,6 +19,7 @@ const LIST: ListResponse = {
   totalRounds: 1,
   currentPool: [],
   members: [{ id: 'u1', username: 'alvaro' }],
+  myStepCompleted: false,
 };
 
 const SECOND: ListResponse = { ...LIST, id: '2', name: 'Otra lista' };

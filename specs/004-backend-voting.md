@@ -25,6 +25,8 @@ This specification defines the final collaborative phase: voting. It establishes
 * **FR-5**: IF there are 15 or fewer names in the pool at the start of the VOTING phase, THEN:
   * Round 1 keeps top 5.
   * Round 2 (Final) keeps top 3.
+* **FR-6**: THE SYSTEM MUST build the initial voting pool as the union of every Common Name (Spec 003 FR-11) and every adopted faded name (Spec 003 FR-6), deduplicated by normalized name. Common names MUST NOT be omitted when only faded names were adopted.
+* **FR-7**: IF the current user has already submitted a vote for the current round, THEN the system MUST report that their step is complete for that round (via `ListResponse.myPhaseStepCompleted`) so the frontend can block re-voting.
 
 ## Non-Functional Requirements
 * **NFR-1 (Consistency)**: Voting scores must be stored atomically using optimistic locking to prevent concurrent update conflicts.

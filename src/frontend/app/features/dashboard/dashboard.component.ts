@@ -10,6 +10,7 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
 import { UiModalComponent } from '../../ui-kit/organisms/modal/modal.component';
 import { UiInputFieldComponent } from '../../ui-kit/atoms/input-field/input-field.component';
 import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.component';
+import { UiInviteModalComponent } from '../../ui-kit/molecules/invite-modal/invite-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -21,6 +22,7 @@ import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.
     UiModalComponent,
     UiInputFieldComponent,
     UiListCardComponent,
+    UiInviteModalComponent,
   ],
   template: `
     <section class="dashboard">
@@ -54,7 +56,10 @@ import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.
           [title]="list.name"
           [phase]="list.phase"
           [memberCount]="list.members.length"
+          [invitationCode]="list.invitationCode"
+          [invitationsOpen]="list.invitationsOpen"
           (clicked)="onCardClick(list)"
+          (inviteClicked)="openInviteModal(list)"
         />
       }
 
@@ -108,6 +113,13 @@ import { UiListCardComponent } from '../../ui-kit/molecules/list-card/list-card.
           </div>
         </form>
       </ui-modal>
+
+      <ui-invite-modal
+        [title]="'Invitar a ' + (invitationTarget()?.name ?? '')"
+        [code]="invitationTarget()?.invitationCode ?? ''"
+        [visible]="invitationTarget() !== null"
+        (closed)="closeInviteModal()"
+      ></ui-invite-modal>
     </section>
   `,
   styles: [
@@ -177,6 +189,7 @@ export class DashboardComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly showCreateModal = signal(false);
   readonly showJoinModal = signal(false);
+  readonly invitationTarget = signal<ListResponse | null>(null);
   readonly createError = signal<string | null>(null);
   readonly joinError = signal<string | null>(null);
   readonly creating = signal(false);
@@ -211,6 +224,14 @@ export class DashboardComponent implements OnInit {
 
   onCardClick(list: ListResponse): void {
     this.router.navigate(['/lists', list.id, this.viewForPhase(list.phase)]);
+  }
+
+  openInviteModal(list: ListResponse): void {
+    this.invitationTarget.set(list);
+  }
+
+  closeInviteModal(): void {
+    this.invitationTarget.set(null);
   }
 
   private viewForPhase(phase: string): string {

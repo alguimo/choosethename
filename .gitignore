@@ -66,4 +66,11 @@ bun-error.log*
 bun-info.log*
 bun-warn.log*
 
+# secrets and key material
+*.pem
+*.key
+*.pfx
+*.p12
+*.keystore
+
 TODO.md

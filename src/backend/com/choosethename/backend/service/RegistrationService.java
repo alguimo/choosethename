@@ -12,10 +12,12 @@ public class RegistrationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordPolicy passwordPolicy;
 
-    public RegistrationService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public RegistrationService(UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordPolicy passwordPolicy) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.passwordPolicy = passwordPolicy;
     }
 
     public User registerParticipant(String username, String password) {
@@ -27,7 +29,7 @@ public class RegistrationService {
             throw new UserAlreadyExistsException("Username already exists");
         }
 
-        validatePassword(password);
+        passwordPolicy.validate(password);
 
         User user = new User();
         user.setUsername(username);
@@ -35,17 +37,5 @@ public class RegistrationService {
         user.setRole(Role.PARTICIPANT);
 
         return userRepository.save(user);
-    }
-
-    private void validatePassword(String password) {
-        if (password.length() < 8) {
-            throw new IllegalArgumentException("Password must be at least 8 characters");
-        }
-        if (!password.matches(".*[A-Z].*")) {
-            throw new IllegalArgumentException("Password must contain at least one uppercase letter");
-        }
-        if (!password.matches(".*[0-9].*")) {
-            throw new IllegalArgumentException("Password must contain at least one digit");
-        }
     }
 }

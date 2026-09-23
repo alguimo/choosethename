@@ -6,12 +6,10 @@ import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListMembershipEntity;
 import com.choosethename.backend.model.ListPhase;
-import com.choosethename.backend.model.SharedNamePoolEntity;
 import com.choosethename.backend.model.VotingRoundEntity;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.NameRepository;
-import com.choosethename.backend.repository.SharedNamePoolRepository;
 import com.choosethename.backend.repository.VotingRoundRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,9 +30,9 @@ public class ListPhaseTransitionService {
     private final ListRepository listRepository;
     private final ListMembershipRepository membershipRepository;
     private final NameRepository nameRepository;
-    private final SharedNamePoolRepository sharedNamePoolRepository;
     private final VotingRoundRepository votingRoundRepository;
     private final RankingService rankingService;
+    private final NamePoolService namePoolService;
 
     @Transactional
     public void checkAndTransitionFromAddition(Long listId) {
@@ -75,9 +73,7 @@ public class ListPhaseTransitionService {
             list.setPhase(ListPhase.VOTING);
             list.setInvitationsOpen(false);
 
-            List<String> pool = sharedNamePoolRepository.findByListIdOrderByIdAsc(listId).stream()
-                    .map(SharedNamePoolEntity::getNormalizedName)
-                    .toList();
+            List<String> pool = namePoolService.buildSharedPool(listId);
             list.setCurrentRound(1);
             list.setTotalRounds(rankingService.totalRoundsFor(pool.size()));
 

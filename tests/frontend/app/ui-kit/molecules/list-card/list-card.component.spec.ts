@@ -76,4 +76,36 @@ describe('UiListCardComponent', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(event.defaultPrevented).toBeTrue();
   });
+
+  it('TS-20: should render the Invitar action only when invitations are open', () => {
+    fixture.componentRef.setInput('invitationCode', 'ABC123');
+    fixture.componentRef.setInput('invitationsOpen', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Invitar');
+
+    fixture.componentRef.setInput('invitationsOpen', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Invitar');
+  });
+
+  it('should emit inviteClicked with the code without activating the card', () => {
+    const inviteSpy = jasmine.createSpy('inviteClicked');
+    const clickedSpy = jasmine.createSpy('clicked');
+    fixture.componentInstance.inviteClicked.subscribe(inviteSpy);
+    fixture.componentInstance.clicked.subscribe(clickedSpy);
+    fixture.componentRef.setInput('invitationCode', 'ABC123');
+    fixture.componentRef.setInput('invitationsOpen', true);
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.ui-list-card') as HTMLElement;
+    const inviteButton = fixture.nativeElement.querySelector('ui-button button') as HTMLButtonElement;
+
+    inviteButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    card.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(inviteSpy).toHaveBeenCalledWith('ABC123');
+    expect(clickedSpy).toHaveBeenCalledTimes(1);
+  });
 });

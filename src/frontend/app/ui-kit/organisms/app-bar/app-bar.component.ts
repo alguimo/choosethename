@@ -12,11 +12,23 @@ import { UiButtonComponent } from '../../atoms/button/button.component';
       <button type="button" class="ui-app-bar__title" (click)="titleClicked.emit()">
         {{ title() }}
       </button>
-      <ui-button
-        variant="ghost"
-        [label]="logoutLabel()"
-        (clicked)="logoutClicked.emit()"
-      ></ui-button>
+      <div class="ui-app-bar__actions">
+        @if (userLabel()) {
+          <span class="ui-app-bar__user">{{ userLabel() }}</span>
+        }
+        @if (showAdmin()) {
+          <ui-button
+            variant="ghost"
+            label="Admin"
+            (clicked)="adminClicked.emit()"
+          ></ui-button>
+        }
+        <ui-button
+          variant="ghost"
+          [label]="logoutLabel()"
+          (clicked)="logoutClicked.emit()"
+        ></ui-button>
+      </div>
     </header>
   `,
   styles: [
@@ -51,12 +63,27 @@ import { UiButtonComponent } from '../../atoms/button/button.component';
         outline: 2px solid var(--ui-color-focus-ring);
         outline-offset: 2px;
       }
+
+      .ui-app-bar__actions {
+        display: flex;
+        align-items: center;
+        gap: var(--ui-spacing-xs);
+      }
+
+      .ui-app-bar__user {
+        margin-right: var(--ui-spacing-xs);
+        font-size: var(--ui-font-size-sm);
+        color: var(--ui-color-on-surface-variant);
+      }
     `,
   ],
 })
 export class UiAppBarComponent {
   readonly title = input('');
   readonly logoutLabel = input('');
+  readonly userLabel = input('');
+  readonly showAdmin = input(false);
   readonly titleClicked = output<void>();
   readonly logoutClicked = output<void>();
+  readonly adminClicked = output<void>();
 }

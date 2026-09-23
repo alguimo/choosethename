@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { MatIcon } from '@angular/material/icon';
 
 import { UiBadgeComponent } from '../../atoms/badge/badge.component';
+import { UiButtonComponent } from '../../atoms/button/button.component';
 import { phaseBadgeColor, phaseLabel } from '../../phase-presentation';
 
 @Component({
   selector: 'ui-list-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [UiBadgeComponent, MatIcon],
+  imports: [UiBadgeComponent, UiButtonComponent, MatIcon],
   template: `
     <div
       class="ui-list-card"
@@ -27,6 +28,18 @@ import { phaseBadgeColor, phaseLabel } from '../../phase-presentation';
         <mat-icon class="ui-list-card__members-icon">people</mat-icon>
         <span>{{ memberCountLabel() }}</span>
       </div>
+      @if (showInvite()) {
+        <div
+          class="ui-list-card__invite"
+          role="button"
+          tabindex="0"
+          (click)="onInvite($event)"
+          (keydown.enter)="onInvite($event)"
+          (keydown.space)="onInvite($event)"
+        >
+          <ui-button label="Invitar" variant="ghost"></ui-button>
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -95,6 +108,11 @@ import { phaseBadgeColor, phaseLabel } from '../../phase-presentation';
         font-size: 16px;
         line-height: 16px;
       }
+
+      .ui-list-card__invite {
+        display: inline-block;
+        align-self: flex-start;
+      }
     `,
   ],
 })
@@ -102,12 +120,18 @@ export class UiListCardComponent {
   readonly title = input('');
   readonly phase = input('');
   readonly memberCount = input<number>(0);
+  readonly invitationCode = input('');
+  readonly invitationsOpen = input<boolean>(false);
   readonly clicked = output<void>();
+  readonly inviteClicked = output<string>();
 
   readonly badgeLabel = computed(() => phaseLabel(this.phase()));
   readonly badgeColor = computed(() => phaseBadgeColor(this.phase()));
   readonly memberCountLabel = computed(() =>
     this.memberCount() === 1 ? '1 miembro' : `${this.memberCount()} miembros`,
+  );
+  readonly showInvite = computed(
+    () => this.invitationsOpen() && this.invitationCode().length > 0,
   );
 
   onActivate(event?: Event): void {
@@ -115,5 +139,11 @@ export class UiListCardComponent {
       event.preventDefault();
     }
     this.clicked.emit();
+  }
+
+  onInvite(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.inviteClicked.emit(this.invitationCode());
   }
 }

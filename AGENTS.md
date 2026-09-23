@@ -13,8 +13,8 @@ A collaborative web application designed to help groups of people choose a name 
 ## Commands
 All commands run from the repository root.
 - Run:
-  - Backend: `mvn spring-boot:run`
-  - Frontend: `npm start`
+  - Backend: `mvn spring-boot:run` (requires the env vars in `.env.example`, including `JWT_SECRET`, to be exported)
+  - Frontend: `npm start` (proxies `/api` to the backend on `8080` via `proxy.conf.json`)
 - Tests:
   - Backend: `mvn test`
   - Frontend: `npm test`

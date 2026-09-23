@@ -11,12 +11,10 @@ import com.choosethename.backend.exception.ResultsNotReadyException;
 import com.choosethename.backend.exception.StaleVoteException;
 import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListPhase;
-import com.choosethename.backend.model.SharedNamePoolEntity;
 import com.choosethename.backend.model.VoteEntity;
 import com.choosethename.backend.model.VotingRoundEntity;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
-import com.choosethename.backend.repository.SharedNamePoolRepository;
 import com.choosethename.backend.repository.VoteRepository;
 import com.choosethename.backend.repository.VotingRoundRepository;
 import com.choosethename.backend.dto.ResultsResponseDTO;
@@ -36,11 +34,11 @@ public class VotingService {
 
     private final ListRepository listRepository;
     private final ListMembershipRepository membershipRepository;
-    private final SharedNamePoolRepository sharedNamePoolRepository;
     private final VotingRoundRepository votingRoundRepository;
     private final VoteRepository voteRepository;
     private final RankingService rankingService;
     private final VoteMapper voteMapper;
+    private final NamePoolService namePoolService;
 
     @Transactional
     public void submitVote(Long listId, Long userId, VoteRequestDTO request) {
@@ -88,9 +86,7 @@ public class VotingService {
     }
 
     private VotingRoundEntity initializeRound(ListEntity list) {
-        List<String> pool = sharedNamePoolRepository.findByListIdOrderByIdAsc(list.getId()).stream()
-                .map(SharedNamePoolEntity::getNormalizedName)
-                .toList();
+        List<String> pool = namePoolService.buildSharedPool(list.getId());
         VotingRoundEntity round = new VotingRoundEntity();
         round.setListId(list.getId());
         round.setRoundNumber(list.getCurrentRound());

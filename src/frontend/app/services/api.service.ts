@@ -8,6 +8,7 @@ import {
   Credentials,
   JoinListRequest,
   ListResponse,
+  NamesResponse,
   ResultsResponse,
   SelectionResponse,
   UserProfile,
@@ -27,6 +28,20 @@ export class ApiService {
 
   register(credentials: Credentials): Observable<UserProfile> {
     return this.http.post<UserProfile>(`${this.baseUrl}/auth/register`, credentials);
+  }
+
+  getMe(): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`${this.baseUrl}/auth/me`);
+  }
+
+  getAdminUsers(): Observable<UserProfile[]> {
+    return this.http.get<UserProfile[]>(`${this.baseUrl}/admin/users`);
+  }
+
+  resetUserPassword(userId: number, newPassword: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/admin/users/${userId}/password`, {
+      newPassword,
+    });
   }
 
   createList(request: CreateListRequest): Observable<ListResponse> {
@@ -51,6 +66,10 @@ export class ApiService {
 
   addNames(listId: string, request: AddNameRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/lists/${listId}/names`, request);
+  }
+
+  getMyNames(listId: string): Observable<NamesResponse> {
+    return this.http.get<NamesResponse>(`${this.baseUrl}/lists/${listId}/names`);
   }
 
   finishAddition(listId: string): Observable<ListResponse> {

@@ -21,6 +21,7 @@ const LIST: ListResponse = {
   totalRounds: 1,
   currentPool: [],
   members: [],
+  myStepCompleted: false,
 };
 
 const apiError = (status: number) =>
@@ -38,11 +39,13 @@ describe('SuggestionComponent', () => {
   beforeEach(async () => {
     apiSpy = jasmine.createSpyObj('ApiService', [
       'getListById',
+      'getMyNames',
       'addNames',
       'finishAddition',
       'login',
     ]);
     apiSpy.getListById.and.returnValue(of(LIST));
+    apiSpy.getMyNames.and.returnValue(of({ names: [] }));
     apiSpy.login.and.returnValue(of({ accessToken: 'new-token', tokenType: 'Bearer' }));
     authSpy = jasmine.createSpyObj('AuthService', ['getToken', 'setToken', 'logout']);
     authSpy.getToken.and.returnValue(null);
@@ -280,5 +283,47 @@ describe('SuggestionComponent', () => {
 
     expect(component.names()).toEqual(['Pablo']);
     expect(localStorageSpy.setItem).toHaveBeenCalledWith('1', 'suggestions', ['Pablo']);
+  });
+
+  it('FR-82: should show the invite button and open the invite modal', () => {
+    expect(component.showInvite()).toBeTrue();
+    expect(renderedText()).toContain('Invitar');
+
+    component.openInviteModal();
+    fixture.detectChanges();
+
+    expect(component.showInviteModal()).toBeTrue();
+    expect(renderedText()).toContain('Código de invitación');
+
+    component.closeInviteModal();
+    fixture.detectChanges();
+
+    expect(component.showInviteModal()).toBeFalse();
+  });
+
+  it('FR-83: should show a read-only waiting state when the own step is completed', () => {
+    apiSpy.getListById.and.returnValue(of({ ...LIST, myStepCompleted: true }));
+    apiSpy.getMyNames.and.returnValue(
+      of({ names: [{ name: 'Morena', normalizedName: 'morena' }] }),
+    );
+
+    const freshFixture = TestBed.createComponent(SuggestionComponent);
+    const freshComponent = freshFixture.componentInstance;
+    freshFixture.detectChanges();
+
+    expect(freshComponent.waiting()).toBeTrue();
+    expect(apiSpy.getMyNames).toHaveBeenCalledWith('1');
+    expect(
+      (freshFixture.nativeElement as HTMLElement).querySelector('.ui-name-input-row'),
+    ).toBeNull();
+    expect((freshFixture.nativeElement as HTMLElement).textContent).toContain(
+      'Esperando a que el resto complete la fase',
+    );
+    expect((freshFixture.nativeElement as HTMLElement).textContent).toContain('Morena');
+
+    freshComponent.completeAddition();
+    freshFixture.detectChanges();
+
+    expect(apiSpy.finishAddition).not.toHaveBeenCalled();
   });
 });

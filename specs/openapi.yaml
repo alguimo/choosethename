@@ -60,6 +60,26 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get the authenticated user's profile
+      description: |
+        Returns the profile (id, username, role) of the caller identified by the
+        JWT. Used by the frontend to render role-gated UI without decoding tokens.
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/v1/lists:
     post:
       tags:
@@ -228,6 +248,31 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+    get:
+      tags:
+        - Names
+      summary: Get the current user's names
+      description: |
+        Returns ONLY the current user's own names during the ADDITION phase (privacy
+        NFR-2). Used to display the submitted names in read-only waiting mode.
+      operationId: getNames
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: The user's own names
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NameResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/lists/{id}/finish-addition:
     post:
       tags:
@@ -383,6 +428,61 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /api/v1/admin/users:
+    get:
+      tags:
+        - Administration
+      summary: List all users
+      description: |
+        Returns every registered user (id, username, role), ordered by id ascending.
+        Restricted to the ADMIN role; non-admins receive 403.
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All registered users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/admin/users/{id}/password:
+    patch:
+      tags:
+        - Administration
+      summary: Reset a user's password
+      description: |
+        Sets a new password for the given user, hashed with BCrypt (cost 12). The new
+        password must meet the same complexity rules as registration. Restricted to
+        the ADMIN role.
+      operationId: resetUserPassword
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
@@ -396,6 +496,14 @@ components:
       in: path
       required: true
       description: ID of the list
+      schema:
+        type: integer
+        format: int64
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: ID of the user
       schema:
         type: integer
         format: int64
@@ -423,6 +531,17 @@ components:
         password:
           type: string
           format: password
+    ResetPasswordRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          format: password
+          description: |
+            New password. Must meet the Spec 001 complexity rules (minimum 8
+            characters, at least one uppercase letter, at least one digit).
     User:
       type: object
       properties:
@@ -484,6 +603,9 @@ components:
             - EXPIRED
         invitationsOpen:
           type: boolean
+        myStepCompleted:
+          type: boolean
+          description: Whether the current user finished their step in the current phase (finished addition, completed selection, or voted in the current round).
         ownerUsername:
           type: string
         currentRound:
@@ -519,6 +641,9 @@ components:
         normalizedName:
           type: string
           description: Lowercase, trimmed form used for matching
+        adopted:
+          type: boolean
+          description: true when the name is already present in the shared pool (only meaningful for faded suggestions)
     NameResponse:
       type: object
       properties:

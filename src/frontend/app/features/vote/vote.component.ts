@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -34,6 +34,10 @@ import { UiDraggableRankingListComponent } from '../../ui-kit/organisms/draggabl
       }
 
       @if (!loading()) {
+        @if (waiting()) {
+          <ui-validation-message type="info" [message]="waitingMessage" />
+        }
+
         <div class="vote__ranking" [class.vote__ranking--invalid]="invalid()">
           <ui-round-indicator
             [currentRound]="roundNumber()"
@@ -42,7 +46,7 @@ import { UiDraggableRankingListComponent } from '../../ui-kit/organisms/draggabl
 
           <ui-draggable-ranking-list
             [items]="ranking()"
-            [disabled]="submitting()"
+            [disabled]="submitting() || waiting()"
             (rankingsChanged)="onRankingsChanged($event)"
           ></ui-draggable-ranking-list>
         </div>
@@ -58,7 +62,7 @@ import { UiDraggableRankingListComponent } from '../../ui-kit/organisms/draggabl
         @if (pool().length > 0) {
           <ui-button
             label="Enviar voto"
-            [disabled]="submitting()"
+            [disabled]="submitting() || waiting()"
             [loading]="submitting()"
             (clicked)="submitVote()"
           ></ui-button>
@@ -145,6 +149,7 @@ export class VoteComponent implements OnInit {
 
   readonly persistenceWarning =
     'Tu progreso no se guardará localmente. No cierres la página.';
+  readonly waitingMessage = 'Esperando a que el resto complete la fase';
   readonly pool = signal<string[]>([]);
   readonly ranking = signal<string[]>([]);
   readonly roundNumber = signal(1);
@@ -153,9 +158,12 @@ export class VoteComponent implements OnInit {
   readonly submitError = signal<string | null>(null);
   readonly invalid = signal(false);
   readonly submitting = signal(false);
+  readonly myStepCompleted = signal(false);
   readonly showReAuth = signal(false);
   readonly reAuthError = signal<string | null>(null);
   readonly reAuthLoading = signal(false);
+
+  readonly waiting = computed(() => this.myStepCompleted());
 
   readonly reAuthForm = this.fb.group({
     username: ['', Validators.required],
@@ -172,9 +180,14 @@ export class VoteComponent implements OnInit {
 
     this.apiService.getListById(this.listId).subscribe({
       next: (list) => {
+        if (list.phase !== 'VOTING') {
+          this.router.navigate(['/lists', list.id, this.viewForPhase(list.phase)]);
+          return;
+        }
         this.pool.set(list.currentPool);
         this.roundNumber.set(list.currentRound);
         this.totalRounds.set(list.totalRounds);
+        this.myStepCompleted.set(list.myStepCompleted);
         this.ranking.set(this.resolveRanking());
         this.loading.set(false);
       },
@@ -186,6 +199,7 @@ export class VoteComponent implements OnInit {
   }
 
   onRankingsChanged(order: string[]): void {
+    if (this.waiting()) return;
     this.ranking.set(order);
     this.invalid.set(false);
     this.submitError.set(null);
@@ -193,7 +207,7 @@ export class VoteComponent implements OnInit {
   }
 
   submitVote(): void {
-    if (this.submitting() || this.ranking().length === 0) return;
+    if (this.waiting() || this.submitting() || this.ranking().length === 0) return;
 
     this.submitting.set(true);
     this.submitError.set(null);
@@ -251,6 +265,19 @@ export class VoteComponent implements OnInit {
 
   private voteKey(): string {
     return `vote_round_${this.roundNumber()}`;
+  }
+
+  private viewForPhase(phase: string): string {
+    switch (phase) {
+      case 'SELECTION':
+        return 'selection';
+      case 'VOTING':
+        return 'vote';
+      case 'COMPLETED':
+        return 'results';
+      default:
+        return 'suggestion';
+    }
   }
 
   private resolveRanking(): string[] {

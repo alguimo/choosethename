@@ -1,6 +1,8 @@
 package com.choosethename.backend.service;
 
 import com.choosethename.backend.dto.AddNameRequestDTO;
+import com.choosethename.backend.dto.AdoptNameRequestDTO;
+import com.choosethename.backend.dto.VoteJsonCodec;
 import com.choosethename.backend.exception.ListOperationException;
 import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListMembershipEntity;
@@ -33,6 +35,7 @@ class ListPhaseTransitionServiceTest {
 
     @Autowired private ListPhaseTransitionService transitionService;
     @Autowired private NameService nameService;
+    @Autowired private SelectionService selectionService;
     @Autowired private UserRepository userRepository;
     @Autowired private ListRepository listRepository;
     @Autowired private ListMembershipRepository membershipRepository;
@@ -156,6 +159,32 @@ class ListPhaseTransitionServiceTest {
 
         ListEntity updated = listRepository.findById(list.getId()).orElseThrow();
         assertThat(updated.getPhase()).isEqualTo(ListPhase.SELECTION);
+    }
+
+    @Test
+    @DisplayName("FR-6: Voting pool contains common names plus adopted faded names")
+    void shouldIncludeCommonNamesInVotingPool() {
+        addName(userA.getId(), "Pablo");
+        addName(userA.getId(), "Maria");
+        addName(userB.getId(), "Pablo");
+        addName(userB.getId(), "Lucia");
+        nameService.finishAddition(list.getId(), userA.getId());
+        nameService.finishAddition(list.getId(), userB.getId());
+
+        AdoptNameRequestDTO request = new AdoptNameRequestDTO();
+        request.setName("lucia");
+        selectionService.adoptFadedName(list.getId(), userA.getId(), request);
+
+        transitionService.completeSelection(list.getId(), userA.getId());
+        transitionService.completeSelection(list.getId(), userB.getId());
+
+        ListEntity updated = reloadList();
+        assertThat(updated.getPhase()).isEqualTo(ListPhase.VOTING);
+        List<String> pool = VoteJsonCodec.decode(votingRoundRepository
+                .findByListIdAndRoundNumber(list.getId(), 1)
+                .orElseThrow()
+                .getPoolRankings());
+        assertThat(pool).containsExactly("lucia", "pablo");
     }
 
     @Test

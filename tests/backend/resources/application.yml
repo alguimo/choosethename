@@ -19,3 +19,6 @@ spring:
 jwt:
   secret: REDACTED
   expiration-ms: 86400000
+
+cors:
+  allowed-origins: http://localhost:4200

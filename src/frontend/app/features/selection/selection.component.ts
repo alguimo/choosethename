@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
@@ -24,11 +24,18 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
       }
 
       @if (!loading() && !error()) {
+        @if (waiting()) {
+          <ui-validation-message type="info" [message]="waitingMessage" />
+        }
+
         <div class="selection__section">
           <h3 class="selection__section-title">Nombres comunes</h3>
           <ul class="selection__list">
             @for (entry of commonNames(); track entry.normalizedName) {
-              <li class="selection__item">{{ entry.name }}</li>
+              <li class="selection__item selection__item--selected">
+                <span class="selection__item-check" aria-hidden="true">✓</span>
+                <span class="selection__item-name">{{ entry.name }}</span>
+              </li>
             } @empty {
               <li class="selection__item selection__item--empty">
                 Aún no hay nombres comunes.
@@ -41,15 +48,23 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
           <h3 class="selection__section-title">Sugerencias</h3>
           <ul class="selection__list">
             @for (entry of fadedSuggestions(); track entry.normalizedName) {
-              <li class="selection__item">
-                <button
-                  type="button"
-                  class="selection__faded-item"
-                  [disabled]="adoptingName() === entry.name"
-                  (click)="adopt(entry.name)"
-                >
-                  {{ entry.name }}
-                </button>
+              <li
+                class="selection__item"
+                [class.selection__item--selected]="entry.adopted"
+              >
+                @if (entry.adopted) {
+                  <span class="selection__item-check" aria-hidden="true">✓</span>
+                  <span class="selection__item-name">{{ entry.name }}</span>
+                } @else {
+                  <button
+                    type="button"
+                    class="selection__faded-item"
+                    [disabled]="adoptingName() === entry.name || waiting()"
+                    (click)="adopt(entry.name)"
+                  >
+                    {{ entry.name }}
+                  </button>
+                }
               </li>
             } @empty {
               <li class="selection__item selection__item--empty">
@@ -60,16 +75,22 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
         </div>
 
         <div class="selection__section">
-          <h3 class="selection__section-title">Mis nombres</h3>
-          <ul class="selection__list">
-            @for (entry of myNames(); track entry.normalizedName) {
-              <li class="selection__item">{{ entry.name }}</li>
-            } @empty {
-              <li class="selection__item selection__item--empty">
-                Aún no tienes nombres.
-              </li>
-            }
-          </ul>
+          <details class="selection__details">
+            <summary class="selection__details-summary">
+              Mis nombres ({{ myNames().length }})
+            </summary>
+            <ul class="selection__list selection__list--compact">
+              @for (entry of myNames(); track entry.normalizedName) {
+                <li class="selection__item selection__item--compact">
+                  <span class="selection__item-name">{{ entry.name }}</span>
+                </li>
+              } @empty {
+                <li class="selection__item selection__item--empty">
+                  Aún no tienes nombres.
+                </li>
+              }
+            </ul>
+          </details>
         </div>
 
         @if (actionError()) {
@@ -78,7 +99,7 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
 
         <ui-button
           label="Completar selección"
-          [disabled]="completing()"
+          [disabled]="completing() || waiting()"
           [loading]="completing()"
           (clicked)="completeSelection()"
         ></ui-button>
@@ -140,6 +161,19 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
         color: var(--ui-color-on-surface);
       }
 
+      .selection__item--selected {
+        background-color: var(--ui-color-success-container);
+        border-color: var(--ui-color-success);
+        color: var(--ui-color-on-success-container);
+        font-weight: var(--ui-font-weight-medium);
+      }
+
+      .selection__item-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       .selection__item--empty {
         justify-content: center;
         border-style: dashed;
@@ -154,13 +188,30 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
         text-align: left;
         font-family: inherit;
         font-size: inherit;
-        color: var(--ui-color-primary);
+        color: var(--ui-color-on-surface-variant);
         cursor: pointer;
       }
 
       .selection__faded-item:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+      }
+
+      .selection__details-summary {
+        cursor: pointer;
+        font-family: var(--ui-font-family);
+        font-size: var(--ui-font-size-sm);
+        font-weight: var(--ui-font-weight-medium);
+        color: var(--ui-color-on-surface-variant);
+      }
+
+      .selection__list--compact {
+        gap: 2px;
+      }
+
+      .selection__item--compact {
+        padding: var(--ui-spacing-xs) var(--ui-spacing-sm);
+        font-size: var(--ui-font-size-sm);
       }
     `,
   ],
@@ -181,9 +232,40 @@ export class SelectionComponent implements OnInit {
   readonly actionError = signal<string | null>(null);
   readonly adoptingName = signal<string | null>(null);
   readonly completing = signal(false);
+  readonly myStepCompleted = signal(false);
+  readonly waitingMessage = 'Esperando a que el resto complete la fase';
+
+  readonly waiting = computed(() => this.myStepCompleted());
 
   ngOnInit(): void {
+    this.loadList();
     this.loadSelection();
+  }
+
+  private loadList(): void {
+    this.apiService.getListById(this.listId).subscribe({
+      next: (list) => {
+        if (list.phase !== 'SELECTION') {
+          this.router.navigate(['/lists', list.id, this.viewForPhase(list.phase)]);
+          return;
+        }
+        this.myStepCompleted.set(list.myStepCompleted);
+      },
+      error: () => undefined,
+    });
+  }
+
+  private viewForPhase(phase: string): string {
+    switch (phase) {
+      case 'SELECTION':
+        return 'selection';
+      case 'VOTING':
+        return 'vote';
+      case 'COMPLETED':
+        return 'results';
+      default:
+        return 'suggestion';
+    }
   }
 
   loadSelection(): void {
@@ -205,7 +287,7 @@ export class SelectionComponent implements OnInit {
   }
 
   adopt(name: string): void {
-    if (this.adoptingName()) return;
+    if (this.waiting() || this.adoptingName()) return;
 
     this.adoptingName.set(name);
     this.actionError.set(null);
@@ -223,7 +305,7 @@ export class SelectionComponent implements OnInit {
   }
 
   completeSelection(): void {
-    if (this.completing()) return;
+    if (this.waiting() || this.completing()) return;
 
     this.completing.set(true);
     this.actionError.set(null);

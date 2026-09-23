@@ -64,14 +64,18 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **FR-25**: WHEN the Participant clicks "Terminar Fase" with at least one suggestion, THE SYSTEM MUST submit the suggestions to `POST /api/v1/lists/{id}/names` with the full names array, then call `POST /api/v1/lists/{id}/finish-addition`.
 *   **FR-26**: IF the names submission succeeds (200) AND the finish-addition succeeds (200), THEN THE SYSTEM MUST clear the localStorage entry for that list and navigate back to the home dashboard.
 *   **FR-27**: IF the names submission or finish-addition fails (400/401/404/409), THEN THE SYSTEM MUST display the error message ("Ha habido un error, inténtelo de nuevo") and retain the local suggestions in localStorage for retry.
+*   **FR-82**: WHEN the suggestion screen is rendered and the list's `invitationsOpen` is `true` with a non-empty `invitationCode`, THEN THE SYSTEM MUST render an "Invitar" action in the suggestion screen header that opens the shared invitation modal (`ui-invite-modal`) showing the code for that list. IF `invitationsOpen` is `false`, THEN THE SYSTEM MUST NOT render that action.
+*   **FR-83**: IF the list is still in ADDITION phase but `ListResponse.myStepCompleted` is `true` (the Participant already finished their names and is waiting for the other members), THEN THE SYSTEM MUST render the suggestion screen in read-only mode: the name input, delete actions and "Terminar Fase" MUST be disabled, the Participant's submitted names MUST be fetched via `GET /api/v1/lists/{id}/names` for display, and a waiting message ("Esperando a que el resto complete la fase") MUST be displayed.
 
 ### 4. Selection Phase
 
-*   **FR-28**: WHEN the list is in SELECTION phase, THE SYSTEM MUST call `GET /api/v1/lists/{id}/selection` and display three sections: "Nombres comunes" (commonNames), "Sugerencias" (fadedSuggestions), and "Mis nombres" (myNames).
-*   **FR-29**: WHEN the Participant clicks on a faded suggestion, THE SYSTEM MUST call `POST /api/v1/lists/{id}/selection/adopt` with the adopted name. IF the adoption succeeds (200), THEN THE SYSTEM MUST refresh the selection view by re-fetching `GET /api/v1/lists/{id}/selection`.
+*   **FR-28**: WHEN the list is in SELECTION phase, THE SYSTEM MUST call `GET /api/v1/lists/{id}/selection` and display three sections: "Nombres comunes" (commonNames), "Sugerencias" (fadedSuggestions), and "Mis nombres" (myNames). Common names and faded suggestions flagged as adopted MUST be rendered as **selected/marked** (highlighted with a check indicator). Faded suggestions flagged as not adopted MUST be rendered grayed out and clickable to adopt.
+*   **FR-29**: WHEN the Participant clicks on an unadopted faded suggestion, THE SYSTEM MUST call `POST /api/v1/lists/{id}/selection/adopt` with the adopted name. IF the adoption succeeds (200), THEN THE SYSTEM MUST refresh the selection view by re-fetching `GET /api/v1/lists/{id}/selection`; the adopted name remains in the "Sugerencias" section but is now rendered as selected/marked. Adoption is one-way and cannot be undone.
 *   **FR-30**: IF the adoption fails (400/404), THEN THE SYSTEM MUST display the backend error message inline.
 *   **FR-31**: WHEN the Participant clicks "Completar selección", THE SYSTEM MUST call `POST /api/v1/lists/{id}/complete-selection`. IF it succeeds (200), THEN THE SYSTEM MUST navigate back to the dashboard.
 *   **FR-32**: IF complete-selection fails (400), THEN THE SYSTEM MUST display the error message and remain on the selection view.
+*   **FR-85**: THE SYSTEM MUST render the "Mis nombres" section as a smaller, collapsible list (e.g., a `<details>` element with a "Mis nombres (n)" summary) so the Participant's own proposals do not look like the rest of the names.
+*   **FR-86**: IF the list is still in SELECTION phase but `ListResponse.myStepCompleted` is `true` (the Participant already completed their selection and is waiting for the other members), THEN THE SYSTEM MUST render the selection view in read-only mode: adoption buttons and "Completar selección" MUST be disabled and a waiting message ("Esperando a que el resto complete la fase") MUST be displayed.
 
 ### 5. Voting Phase (Local-First, Round-Based)
 
@@ -83,6 +87,7 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **FR-38**: IF the vote submission fails with 409 (Conflict — e.g., stale round or already voted), THEN THE SYSTEM MUST display the error message ("Ha habido un error, inténtelo de nuevo") and retain the ranking in localStorage for retry.
 *   **FR-39**: IF the vote submission fails with 400/422 (invalid ranking — e.g., missing names, wrong count), THEN THE SYSTEM MUST mark the ranking container with a red border and display an error message ("Voto no válido. Revisa el orden de los nombres").
 *   **FR-40**: IF the vote submission fails with 401 (expired token), THEN THE SYSTEM MUST prompt for re-authentication and retry the submission with the new token.
+*   **FR-84**: IF the list is still in VOTING phase but `ListResponse.myStepCompleted` is `true` (the Participant already voted in the current round and is waiting for the other members), THEN THE SYSTEM MUST render the voting screen in read-only mode: the ranking list and "Enviar voto" MUST be disabled and a waiting message ("Esperando a que el resto vote") MUST be displayed.
 
 ### 6. Results Screen
 
@@ -125,6 +130,24 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **FR-65**: WHEN the Participant clicks "Cerrar sesión", THE SYSTEM MUST clear the stored JWT, invalidate the in-memory dashboard cache, clear ALL localStorage entries for list progress (keys prefixed with `list_`), and navigate to the login screen. The Participant MUST NOT be able to reach authenticated screens after logging out.
 *   **FR-66**: THE SYSTEM MUST NOT render the `ui-app-bar` on the login or registration screens.
 
+### 11. Invitation Sharing
+
+*   **FR-67**: WHEN the dashboard is rendered and a list has `invitationsOpen` set to `true`, THEN THE SYSTEM MUST render an "Invitar" action on that list's card (`ui-list-card`).
+*   **FR-68**: WHEN the Participant clicks "Invitar" (from the dashboard card or from the suggestion screen header — FR-82), THE SYSTEM MUST display the shared invitation modal (`ui-invite-modal`) showing the list name and its `invitationCode` using the `ui-copy-field` molecule.
+*   **FR-69**: WHEN the Participant clicks "Copiar" in the invitation modal, THE SYSTEM MUST copy the code to the clipboard and display the confirmation message ("Código copiado").
+*   **FR-70**: IF a list has `invitationsOpen` set to `false`, THEN THE SYSTEM MUST NOT render the "Invitar" action on its card.
+*   **FR-71**: IF the clipboard is unavailable, THEN THE SYSTEM MUST display the code in a read-only, pre-selected input so the Participant can copy manually, alongside the message ("Copia el código manualmente").
+
+### 12. Administration
+
+*   **FR-72**: WHEN the Participant authenticates successfully, THE SYSTEM MUST fetch the user's role via `GET /api/v1/auth/me` and store the profile in the session state. THE SYSTEM MUST NOT decode JWTs client-side to obtain the role (NFR-1).
+*   **FR-73**: WHEN the stored role is `ADMIN`, THE SYSTEM MUST render an admin action in the `ui-app-bar` that navigates to `/admin`. IF the role is not `ADMIN`, THEN THE SYSTEM MUST NOT render it.
+*   **FR-74**: WHEN the Participant navigates to `/admin`, THE SYSTEM MUST call `GET /api/v1/admin/users` and display the returned users (id, username, role) in a list.
+*   **FR-75**: WHEN the Administrator selects a user and requests a password reset, THE SYSTEM MUST display a modal with a new-password field validated with the same client-side complexity rules as registration (FR-56).
+*   **FR-76**: WHEN the Administrator submits a valid new password, THE SYSTEM MUST call `PATCH /api/v1/admin/users/{id}/password`. IF it returns 200, THEN THE SYSTEM MUST close the modal and display the success message ("Contraseña actualizada").
+*   **FR-77**: IF the password reset fails (400/404), THEN THE SYSTEM MUST display the backend error message inline and keep the modal open.
+*   **FR-78**: WHEN a non-ADMIN navigates to `/admin`, THEN THE SYSTEM MUST redirect to the home dashboard. WHEN an unauthenticated user navigates to `/admin`, THEN THE SYSTEM MUST redirect to the login screen.
+
 ---
 
 ## Non-Functional Requirements
@@ -156,6 +179,12 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **List Owner Closes Invitations While Offline**: IF the owner closes invitations while the user is offline, the user's local editing is unaffected. The next API call will reflect the updated state.
 *   **Results Not Ready**: IF the results endpoint returns 409, the system shows a processing message with a retry button (FR-42).
 *   **User in Multiple Lists**: The dashboard shows one card per list; the "Crear lista nueva" and "Unirse con código" actions remain available, and each list is opened by its own id (FR-9, FR-18, NFR-8).
+*   **Invitations Closed**: Once `invitationsOpen` is `false`, the "Invitar" action disappears from the card (FR-70).
+*   **Clipboard Unavailable**: The invitation modal falls back to a read-only pre-selected input with a manual-copy message (FR-71).
+*   **Profile Fetch Failure on Login**: IF fetching `/auth/me` fails after authentication, THEN THE SYSTEM MUST continue operating without role-gated UI (the admin action stays hidden) and retry the profile fetch on a later visit.
+*   **Reset Target Not Found**: IF `PATCH /api/v1/admin/users/{id}/password` returns 404, THEN THE SYSTEM MUST display the backend error and keep the reset modal open (FR-77).
+*   **Finished Phase Waiting for Others**: Once a Participant finishes their current phase step (`myStepCompleted=true`) but the list phase has not advanced, the corresponding screen MUST switch to read-only mode with a waiting message (FR-83, FR-86, FR-84). The Participant cannot modify names or re-vote until the other members finish.
+*   **Voting Pool Includes Common Names**: The voting `currentPool` returned by `GET /api/v1/lists/{id}` MUST contain common names plus adopted faded names, so common names are never missing from a round (Spec 004 FR-6).
 
 ---
 
@@ -200,6 +229,28 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **TS-38**: Authenticated screen shows the app bar; login and registration screens do not.
 *   **TS-39**: Click "Cerrar sesión" → JWT cleared, dashboard cache and `list_*` localStorage entries cleared, redirected to `/login`.
 *   **TS-40**: Create or join a second list while already in another list → new list card appears on the dashboard without losing the first.
+*   **TS-41**: Owner with `invitationsOpen=true` → card shows "Invitar"; clicking opens a modal with the list name and code.
+*   **TS-42**: Click "Copiar" → clipboard contains the code and "Código copiado" is shown.
+*   **TS-43**: Card with `invitationsOpen=false` renders no "Invitar" action.
+*   **TS-44**: Clipboard unavailable → read-only pre-selected input and manual-copy message shown.
+*   **TS-45**: Authenticated user fetches the profile via `/auth/me`; an `ADMIN` sees the admin action, a `PARTICIPANT` does not.
+*   **TS-46**: Admin navigates to `/admin` → users list displayed.
+*   **TS-47**: Admin resets a user's password successfully → 200, modal closed, "Contraseña actualizada" shown.
+*   **TS-48**: Reset with a weak password → client-side field errors shown, no request sent.
+*   **TS-49**: Reset fails (e.g., 404) → backend error shown inline, modal stays open.
+*   **TS-50**: Non-admin navigating to `/admin` is redirected to the dashboard.
+*   **TS-51**: Unauthenticated user navigating to `/admin` is redirected to login.
+*   **TS-52**: The register flow sends exactly the typed password (no trimming or transformation) and a subsequent login with the same credentials succeeds (regression guard).
+*   **TS-53**: Register fails with a 400 and a known password-rejection message → the specific message is shown inline on the password field, form retained.
+*   **TS-54**: Register fails with a 400 empty-fields message → "El usuario es obligatorio" and "La contraseña es obligatoria" shown on their respective fields.
+*   **TS-55**: Register fails with an unrecognized 400 → generic "Verifica los datos introducidos" shown, form retained.
+*   **TS-56**: Selection view marks adopted suggestions and common names as selected (check indicator) and grays out unadopted faded suggestions.
+*   **TS-57**: "Mis nombres" is rendered in a collapsible section with a smaller summary label that preserves the name count.
+*   **TS-58**: Admin/selection waiting lock: with `myStepCompleted=true` and the list still in SELECTION, adoption buttons and "Completar selección" are disabled and the waiting message is shown.
+*   **TS-59**: Suggestion waiting lock: with `myStepCompleted=true` and the list still in ADDITION, the input, delete actions and "Terminar Fase" are disabled, submitted names are fetched and displayed, and the waiting message is shown.
+*   **TS-60**: Voting waiting lock: with `myStepCompleted=true` and the list still in VOTING, the ranking list and "Enviar voto" are disabled and the waiting message is shown.
+*   **TS-61**: The suggestion screen renders the "Invitar" action when `invitationsOpen=true` and opens `ui-invite-modal` with the list code; it does not render it when `invitationsOpen=false`.
+*   **TS-62**: Invitation modal (`ui-invite-modal`) shows the copied confirmation on successful copy and the manual-copy message on clipboard failure.
 
 ---
 
@@ -225,5 +276,7 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   Selection phase with common/faded/own names display and adoption flow.
 *   Voting phase with drag-and-drop ranking, round-based submission, local-first persistence, and invalid-vote feedback (red border).
 *   Results screen displaying final rankings.
+*   Invitation sharing: "Invitar" action on open lists, invitation modal with copy-to-clipboard and clipboard fallback (FR-67..FR-71).
+*   Administration: profile fetch via `/auth/me`, ADMIN-only app-bar action, `/admin` screen listing users, and the password-reset modal (FR-72..FR-78).
 *   Cache management verified: clear on success, retain on error, 5-minute dashboard refresh.
 *   Full test suite passing (`npm test`) with zero lint warnings (`npm run lint`).

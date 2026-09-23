@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { SelectionComponent } from '@app/features/selection/selection.component';
 import { ApiService } from '@app/services/api.service';
 import { DashboardService } from '@app/services/dashboard.service';
-import { SelectionResponse } from '@app/models/api.models';
+import { ListResponse, SelectionResponse } from '@app/models/api.models';
 
 const EMPTY_SELECTION: SelectionResponse = {
   commonNames: [],
@@ -19,6 +19,21 @@ const SELECTION: SelectionResponse = {
   myNames: [{ name: 'Carla', normalizedName: 'carla' }],
 };
 
+const list = (myStepCompleted: boolean): ListResponse => ({
+  id: '1',
+  name: 'El Nombre',
+  invitationCode: 'ABC123',
+  codeExpiresAt: new Date().toISOString(),
+  phase: 'SELECTION',
+  invitationsOpen: true,
+  ownerUsername: 'alice',
+  currentRound: 1,
+  totalRounds: 3,
+  currentPool: ['Ana', 'Bruno', 'Carla'],
+  members: [],
+  myStepCompleted,
+});
+
 describe('SelectionComponent', () => {
   let component: SelectionComponent;
   let fixture: ComponentFixture<SelectionComponent>;
@@ -29,10 +44,12 @@ describe('SelectionComponent', () => {
   beforeEach(async () => {
     apiSpy = jasmine.createSpyObj('ApiService', [
       'getSelection',
+      'getListById',
       'adoptFadedName',
       'completeSelection',
     ]);
     apiSpy.getSelection.and.returnValue(of(EMPTY_SELECTION));
+    apiSpy.getListById.and.returnValue(of(list(false)));
     apiSpy.adoptFadedName.and.returnValue(of(undefined));
     apiSpy.completeSelection.and.returnValue(of(undefined));
     dashboardSpy = jasmine.createSpyObj('DashboardService', ['invalidate']);
@@ -94,8 +111,8 @@ describe('SelectionComponent', () => {
 
   it('TS-17: should adopt a faded name and refresh the selection view', () => {
     const refreshed: SelectionResponse = {
-      commonNames: [{ name: 'Bruno', normalizedName: 'bruno' }],
-      fadedSuggestions: [],
+      commonNames: SELECTION.commonNames,
+      fadedSuggestions: [{ name: 'Bruno', normalizedName: 'bruno', adopted: true }],
       myNames: SELECTION.myNames,
     };
     apiSpy.getSelection.and.returnValues(of(SELECTION), of(refreshed));
@@ -111,8 +128,9 @@ describe('SelectionComponent', () => {
 
     expect(apiSpy.adoptFadedName).toHaveBeenCalledWith('1', 'Bruno');
     expect(apiSpy.getSelection).toHaveBeenCalledTimes(2);
-    expect(component.fadedSuggestions()).toEqual([]);
-    expect(component.commonNames()).toEqual(refreshed.commonNames);
+    expect(component.fadedSuggestions()).toEqual(refreshed.fadedSuggestions);
+    expect(component.myNames()).toEqual(SELECTION.myNames);
+    expect(fixture.nativeElement.querySelector('.selection__faded-item')).toBeNull();
     expect(renderedText()).toContain('Bruno');
   });
 
@@ -169,5 +187,27 @@ describe('SelectionComponent', () => {
     expect(routerSpy.navigate).not.toHaveBeenCalled();
     expect(component.completing()).toBeFalse();
     expect(renderedText()).toContain('Fase incorrecta');
+  });
+
+  it('FR-85/86: should switch to the read-only waiting state when the own step is completed', () => {
+    apiSpy.getListById.and.returnValue(of(list(true)));
+    apiSpy.getSelection.and.returnValue(of(SELECTION));
+
+    fixture.detectChanges();
+
+    expect(component.waiting()).toBeTrue();
+    expect(renderedText()).toContain('Esperando a que el resto complete la fase');
+    const fadedItem = fixture.nativeElement.querySelector(
+      '.selection__faded-item',
+    ) as HTMLButtonElement;
+    expect(fadedItem).toBeTruthy();
+    expect(fadedItem.disabled).toBeTrue();
+
+    component.adopt('Bruno');
+    component.completeSelection();
+    fixture.detectChanges();
+
+    expect(apiSpy.adoptFadedName).not.toHaveBeenCalled();
+    expect(apiSpy.completeSelection).not.toHaveBeenCalled();
   });
 });

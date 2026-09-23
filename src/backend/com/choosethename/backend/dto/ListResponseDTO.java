@@ -19,4 +19,5 @@ public class ListResponseDTO {
     private int totalRounds;
     private List<String> currentPool;
     private List<String> members;
+    private boolean myStepCompleted;
 }

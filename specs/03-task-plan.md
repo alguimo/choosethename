@@ -323,17 +323,104 @@ These two specs are developed **in parallel**: the `ui-kit` component inventory 
   - **RF**: 005 FR-53, FR-54.
   - **Done when**: 005 TS-30..TS-36 pass and `npm run build` (AOT) succeeds with the "Crear cuenta" action present.
 
-- [ ] **Task 16: App bar organism (`ui-app-bar`) (~20 min)**
+- [x] **Task 16: App bar organism (`ui-app-bar`) (~20 min)**
   - **Description**: Add the `ui-app-bar` organism (inputs `title`/`logoutLabel`; outputs `titleClicked`/`logoutClicked`), presentational only.
   - **RF**: 006 FR-39..FR-41.
   - **Done when**: 006 TS-18 passes.
 
-- [ ] **Task 17: Authenticated layout, routes & logout (~25 min)**
+- [x] **Task 17: Authenticated layout, routes & logout (~25 min)**
   - **Description**: Add `AppLayoutComponent` (uses `ui-app-bar` + `router-outlet`), wrap authenticated routes under it with `authGuard`, wire logout to clear JWT, invalidate the dashboard cache, clear `list_*` localStorage entries, and navigate to `/login`.
   - **RF**: 005 FR-63..FR-66, NFR-4, NFR-8.
   - **Done when**: 005 TS-38, TS-39 pass.
 
-- [ ] **Task 18: Frontend verification for the amendment (~15 min)**
+- [x] **Task 18: Frontend verification for the amendment (~15 min)**
   - **Description**: Run `npm test`, `npm run lint`, and `npm run build` (AOT); confirm green, zero warnings, and a successful production build.
   - **RF**: Constitution P3.2; AGENTS.md finishing rules.
   - **Done when**: Frontend suites pass 100%, zero lint warnings, and the AOT build succeeds.
+
+---
+
+# Backlog Work Plan (Specs 001/005/006/008)
+
+> Addresses the `todo.md` backlog (items 1–8). Spec-first work was completed first: new FRs/TSs were added to specs 001, 005 and 006, and the new `008-admin-management.md` was approved; the API contract in `openapi.yaml` and `02-contracts.md` was extended accordingly. Tasks below implement those specs test-first (Constitution P3.1/P3.2). Items marked *deferred* are specified but intentionally postponed (post-MVP).
+
+## G0 — Self-registered login bug (todo #1, P1)
+
+- [ ] **Task 1: Reproduce, regression test & fix (~30 min)**
+  - **Description**: Rebuild and serve the current frontend, capture the exact register/login payloads for a self-registered user, and confirm whether the stored hash matches the typed password. Add the Spec 005 regression (TS-52) as a frontend spec asserting the register flow sends the password verbatim; if a backend defect surfaces, add the corresponding backend test. Fix the root cause.
+  - **RF**: 005 TS-52; 001 TS-1..TS-5 (existing round-trip coverage); Constitution P3.1/P3.2.
+  - **Done when**: The regression spec passes, the register→login round-trip works with the current build, and the full suites are green.
+
+## G1 — Quick frontend wins (todo #2, #3, P2)
+
+- [ ] **Task 2: Password visibility toggle (ui-input-field + screens) (~20 min)**
+  - **Description**: Implement 006 FR-42 (visibility toggle for `type="password"` with a11y). Consume it in the login and register screens and the two re-auth modals (suggestion/vote).
+  - **RF**: 006 FR-42, TS-19; 005 FR-1, FR-54.
+  - **Done when**: 006 TS-19 passes and all four password fields offer the toggle.
+
+- [ ] **Task 3: Invite action + copy-field (ui-kit) (~20 min)**
+  - **Description**: Implement 006 FR-43 (`ui-list-card` "Invitar" action) and 006 FR-44..FR-46 (`ui-copy-field` molecule with clipboard fallback).
+  - **RF**: 006 FR-43..FR-46, TS-20, TS-22.
+  - **Done when**: 006 TS-20 and TS-22 pass, including the clipboard-unavailable fallback.
+
+- [ ] **Task 4: Invitation modal (dashboard) (~20 min)**
+  - **Description**: Compose the invitation modal (005 FR-67..FR-71) on the dashboard using `ui-modal` + `ui-copy-field`; hide the "Invitar" action when `invitationsOpen=false`.
+  - **RF**: 005 FR-67..FR-71, TS-41..TS-44.
+  - **Done when**: 005 TS-41..TS-44 pass.
+
+## G2 — Auth plumbing (todo #5 P1, #6 P2)
+
+- [ ] **Task 5: GET /api/v1/auth/me (backend) (~20 min)**
+  - **Description**: Implement 001 FR-6 (and 008 FR-1/FR-2) returning the authenticated user's profile from the token/DB; already added to the contract (openapi, 02-contracts).
+  - **RF**: 001 FR-6, TS-6, TS-7; 008 FR-1, FR-2.
+  - **Done when**: 001 TS-6 and TS-7 pass (integration tests).
+
+- [ ] **Task 6: Frontend profile/role via /auth/me (~20 min)**
+  - **Description**: Extend `auth.service` to fetch and store the profile/role (005 FR-72); no JWT decoding (NFR-1).
+  - **RF**: 005 FR-72, FR-73, TS-45.
+  - **Done when**: 005 TS-45 passes.
+
+- [ ] **Task 7: Externalize the JWT secret (P1) (~25 min)**
+  - **Description**: Read `jwt.secret` from `${JWT_SECRET}` in `application.yml`, remove the committed literal, and keep a test-only value in test resources; verify startup fails fast without the variable. Update the README env list.
+  - **RF**: 001 NFR-6.
+  - **Done when**: Production config has no literal secret, the backend boots with `JWT_SECRET` set, and tests stay green with the test-only value.
+
+- [ ] **Task 8: Explicit CORS configuration (~15 min)**
+  - **Description**: Add a `CorsConfigurationSource` bean honoring `CORS_ALLOWED_ORIGINS`; only configured origins are allowed.
+  - **RF**: 001 FR-8, NFR-7, TS-9.
+  - **Done when**: 001 TS-9 passes (allowed preflight receives CORS headers; disallowed does not).
+
+- [ ] **Task 9: Login rate limiting (P2) (~25 min)**
+  - **Description**: In-memory sliding-window limiter (no new dependency) on `POST /auth/login` → 429 after the Spec 001 threshold; reset counter on successful login.
+  - **RF**: 001 FR-7, TS-8.
+  - **Done when**: 001 TS-8 passes (429 after threshold; counter reset on success).
+
+## G3 — Admin backend + frontend (todo #4, P2)
+
+- [ ] **Task 10: Admin endpoints + method security (~30 min)**
+  - **Description**: Implement 008 FR-3..FR-10: `GET /admin/users`, `PATCH /admin/users/{id}/password`, `@EnableMethodSecurity` + `@PreAuthorize("hasRole('ADMIN')")`.
+  - **RF**: All 008 FRs, TS-1..TS-8.
+  - **Done when**: 008 TS-1..TS-8 pass.
+
+- [ ] **Task 11: Admin frontend — guard, screen, reset modal (~30 min)**
+  - **Description**: Add the `/admin` route with an admin guard, the users screen (005 FR-74), the reset modal (005 FR-75..FR-77), and the app-bar admin action (005 FR-73; 006 FR-47 + TS-21).
+  - **RF**: 005 FR-72..FR-78, TS-46..TS-51; 006 FR-47, TS-21.
+  - **Done when**: 005 TS-46..TS-51 and 006 TS-21 pass.
+
+## G4 — Hardening (P3, deferred)
+
+- [ ] **Task 12: Token revocation / server-side logout (deferred)** — Blacklist issued JWTs until expiry and add a server-side logout; specified for a future iteration (extend 001).
+- [ ] **Task 13: Hardened password reset (deferred)** — Single-use tokens, expiry, and audit trail extending 008 Task 10's MVP; specified as out of scope in 008.
+
+## G5 — Quality / developer experience (todo #7, #8, P2/P3)
+
+- [ ] **Task 14: Angular bundle budgets (~10 min)** — Validate/adjust `angular.json` thresholds so the production build stays within budget (005 NFR-6).
+- [ ] **Task 15: Local dev documentation (~15 min)** — Document `.env` sourcing (`BDD_*`, `JWT_SECRET`), and that `npm start` proxies `/api` to the backend on `8080` (README/AGENTS).
+- [ ] **Task 16: Leave/delete-list confirmation (doc-only, ~5 min)** — Record the intentional out-of-scope decision for "Removing a user from a list" (already listed in 005 Out of Scope) in the contracts/plan notes.
+- [ ] **Task 17: Frontend E2E tests (deferred)** — Pending approval of a new dependency (e.g., Playwright/Cypress); MVP uses Karma/Jasmine unit specs only.
+
+## Final verification
+
+- [ ] **Task 18: Full verification (~20 min)** — Run `mvn test`, `npm test`, and `npm run lint`; confirm 100% green and zero warnings, and that every new TS from specs 001/005/006/008 maps to a passing test.
+  - **RF**: Constitution P3.2; AGENTS.md finishing rules.
+  - **Done when**: Backend and frontend suites pass 100%; linters and formatters report zero warnings.

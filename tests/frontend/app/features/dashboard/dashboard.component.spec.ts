@@ -4,8 +4,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { Router } from '@angular/router';
+import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 import { DashboardComponent } from '@app/features/dashboard/dashboard.component';
+import { UiCopyFieldComponent } from '@app/ui-kit/molecules/copy-field/copy-field.component';
 import { ApiService } from '@app/services/api.service';
 import { ListResponse } from '@app/models/api.models';
 
@@ -21,6 +23,7 @@ const LIST: ListResponse = {
   totalRounds: 1,
   currentPool: [],
   members: [{ id: 'u1', username: 'alvaro' }],
+  myStepCompleted: false,
 };
 
 const SECOND: ListResponse = { ...LIST, id: '2', name: 'Otra lista' };
@@ -233,5 +236,60 @@ describe('DashboardComponent', () => {
     component.createList();
 
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/lists', '2', 'suggestion']);
+  });
+
+  it('TS-41: should open the invitation modal with the list code when Invitar is activated', () => {
+    apiSpy.getMyLists.and.returnValue(of([LIST]));
+    fixture.detectChanges();
+
+    component.openInviteModal(LIST);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Invitar a La pandilla');
+    expect(text).toContain('Código de invitación');
+    expect(fixture.nativeElement.querySelector('ui-copy-field input')?.value).toBe('ABC123');
+  });
+
+  it('TS-42: should close the invitation modal and clear the target', () => {
+    component.openInviteModal(LIST);
+    fixture.detectChanges();
+    expect(component.invitationTarget()).toEqual(LIST);
+
+    component.closeInviteModal();
+    fixture.detectChanges();
+
+    expect(component.invitationTarget()).toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('ui-copy-field input'),
+    ).toBeNull();
+  });
+
+  it('FR-50: should show the copied confirmation when the invite code is copied', () => {
+    component.openInviteModal(LIST);
+    fixture.detectChanges();
+
+    const copyField = fixture.debugElement.query(
+      By.directive(UiCopyFieldComponent),
+    ).componentInstance as UiCopyFieldComponent;
+    copyField.copied.emit();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Código copiado');
+  });
+
+  it('FR-49: should show the manual copy message when the clipboard copy fails', () => {
+    component.openInviteModal(LIST);
+    fixture.detectChanges();
+
+    const copyField = fixture.debugElement.query(
+      By.directive(UiCopyFieldComponent),
+    ).componentInstance as UiCopyFieldComponent;
+    copyField.copyFailed.emit();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'No se ha podido copiar automáticamente. Copia el código manualmente.',
+    );
   });
 });

@@ -10,9 +10,11 @@ import com.choosethename.backend.model.ListEntity;
 import com.choosethename.backend.model.ListMembershipEntity;
 import com.choosethename.backend.model.ListPhase;
 import com.choosethename.backend.model.User;
+import com.choosethename.backend.model.VotingRoundEntity;
 import com.choosethename.backend.repository.ListMembershipRepository;
 import com.choosethename.backend.repository.ListRepository;
 import com.choosethename.backend.repository.UserRepository;
+import com.choosethename.backend.repository.VoteRepository;
 import com.choosethename.backend.repository.VotingRoundRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class ListService {
     private final ListMapper listMapper;
     private final UserRepository userRepository;
     private final VotingRoundRepository votingRoundRepository;
+    private final VoteRepository voteRepository;
 
     @Transactional
     public ListResponseDTO createList(String name, Long ownerId) {
@@ -63,7 +66,7 @@ public class ListService {
         membership.setJoinedAt(Instant.now());
         membershipRepository.save(membership);
 
-        return toResponseDTO(saved);
+        return toResponseDTO(saved, ownerId);
     }
 
     @Transactional
@@ -99,13 +102,13 @@ public class ListService {
             listRepository.save(list);
         }
 
-        return toResponseDTO(list);
+        return toResponseDTO(list, userId);
     }
 
     @Transactional(readOnly = true)
     public List<ListResponseDTO> getListsForUser(Long userId) {
         return listRepository.findListsForUser(userId, ListPhase.EXPIRED).stream()
-                .map(this::toResponseDTO)
+                .map(list -> toResponseDTO(list, userId))
                 .toList();
     }
 
@@ -116,7 +119,7 @@ public class ListService {
                 .filter(entity -> userId.equals(entity.getOwnerId())
                         || membershipRepository.findByListIdAndUserId(entity.getId(), userId).isPresent())
                 .orElseThrow(() -> new ListNotFoundException("List not found"));
-        return toResponseDTO(list);
+        return toResponseDTO(list, userId);
     }
 
     @Transactional
@@ -127,7 +130,7 @@ public class ListService {
             throw new ListAccessDeniedException("Only the list owner can close invitations");
         }
         list.setInvitationsOpen(false);
-        return toResponseDTO(listRepository.save(list));
+        return toResponseDTO(listRepository.save(list), userId);
     }
 
     private void validateCodeFormat(String code) {
@@ -136,7 +139,7 @@ public class ListService {
         }
     }
 
-    private ListResponseDTO toResponseDTO(ListEntity list) {
+    private ListResponseDTO toResponseDTO(ListEntity list, Long userId) {
         List<String> memberNames = membershipRepository.findByListId(list.getId()).stream()
                 .map(member -> userRepository.findById(member.getUserId()).map(User::getUsername).orElse(null))
                 .filter(Objects::nonNull)
@@ -146,6 +149,29 @@ public class ListService {
                 .findByListIdAndRoundNumber(list.getId(), list.getCurrentRound())
                 .map(round -> VoteJsonCodec.decode(round.getPoolRankings()))
                 .orElse(List.of());
-        return listMapper.toResponseDTO(list, memberNames, ownerUsername, currentPool);
+        return listMapper.toResponseDTO(list, memberNames, ownerUsername, currentPool,
+                computeMyStepCompleted(list, userId));
+    }
+
+    private boolean computeMyStepCompleted(ListEntity list, Long userId) {
+        if (list.getPhase() == ListPhase.COMPLETED || list.getPhase() == ListPhase.EXPIRED) {
+            return false;
+        }
+        ListMembershipEntity membership = membershipRepository.findByListIdAndUserId(list.getId(), userId)
+                .orElse(null);
+        if (membership == null) {
+            return false;
+        }
+        return switch (list.getPhase()) {
+            case ADDITION -> membership.getFinishedAt() != null;
+            case SELECTION -> membership.getSelectionCompletedAt() != null;
+            case VOTING -> votingRoundRepository
+                    .findByListIdAndRoundNumber(list.getId(), list.getCurrentRound())
+                    .map(round -> voteRepository
+                            .findByListIdAndUserIdAndRoundId(list.getId(), userId, round.getId())
+                            .isPresent())
+                    .orElse(false);
+            default -> false;
+        };
     }
 }

@@ -100,6 +100,49 @@ class NameServiceTest {
     }
 
     @Test
+    @DisplayName("Should return only the current user's own names during ADDITION (privacy NFR-2)")
+    void shouldReturnOnlyOwnNamesDuringAddition() {
+        addNames(userA.getId(), List.of("Pablo", "Maria"));
+        addNames(userB.getId(), List.of("Pablo", "Lucia"));
+
+        NameResponseDTO response = nameService.getNames(list.getId(), userA.getId());
+
+        assertThat(response.getNames()).hasSize(2);
+        assertThat(response.getNames()).extracting(NameResponseDTO.NameEntry::getName)
+                .containsExactly("Pablo", "Maria");
+        assertThat(response.getNames()).extracting(NameResponseDTO.NameEntry::getNormalizedName)
+                .containsExactly("pablo", "maria");
+    }
+
+    @Test
+    @DisplayName("Should reject viewing names outside the ADDITION phase")
+    void shouldRejectViewingNamesOutsideAddition() {
+        addNames(userA.getId(), List.of("Pablo"));
+        list.setPhase(ListPhase.SELECTION);
+        listRepository.save(list);
+
+        assertThatThrownBy(() -> nameService.getNames(list.getId(), userA.getId()))
+                .isInstanceOf(ListOperationException.class)
+                .hasMessage("Names can only be viewed during the ADDITION phase");
+    }
+
+    @Test
+    @DisplayName("Should reject viewing names when the user is not a member")
+    void shouldRejectViewingNamesWhenNotMember() {
+        addNames(userA.getId(), List.of("Pablo"));
+
+        assertThatThrownBy(() -> nameService.getNames(list.getId(), 999999L))
+                .isInstanceOf(ListOperationException.class)
+                .hasMessage("User is not a member of this list");
+    }
+
+    private void addNames(Long userId, List<String> names) {
+        AddNameRequestDTO request = new AddNameRequestDTO();
+        request.setNames(names);
+        nameService.addNames(list.getId(), userId, request);
+    }
+
+    @Test
     @DisplayName("Should reject duplicate name with 422")
     void shouldRejectDuplicateNameWith422() {
         AddNameRequestDTO request = new AddNameRequestDTO();

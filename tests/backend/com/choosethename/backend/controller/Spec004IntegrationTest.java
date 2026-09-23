@@ -73,7 +73,8 @@ class Spec004IntegrationTest {
         assertThat(active.jsonPath().getString("phase")).isEqualTo("VOTING");
         assertThat(active.jsonPath().getInt("currentRound")).isEqualTo(1);
         assertThat(active.jsonPath().getInt("totalRounds")).isEqualTo(2);
-        assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "sofia", "maria", "juan");
+        assertThat(active.jsonPath().getList("currentPool"))
+                .containsExactly("lucia", "sofia", "maria", "juan", "pablo");
 
         // Results are not ready while VOTING
         getResults(alice, listId).then().statusCode(409);
@@ -91,27 +92,27 @@ class Spec004IntegrationTest {
         vote(alice, listId, 0, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(409);
 
         // One of two votes does not advance the round
-        vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
+        vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(200);
         assertThat(getList(alice, listId).jsonPath().getInt("currentRound")).isEqualTo(1);
 
         // Re-vote overwrites without advancing
-        vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(200);
+        vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(200);
         assertThat(voteRepository.countByListIdAndRoundId((long) listId,
                 votingRoundRepository.findByListIdAndRoundNumber((long) listId, 1).orElseThrow().getId())).isEqualTo(1);
 
-        // Second vote advances to round 2 (caps keep all four names)
-        vote(bob, listId, 1, List.of("maria", "juan", "lucia", "sofia")).then().statusCode(200);
+        // Second vote advances to round 2 (caps keep all five names)
+        vote(bob, listId, 1, List.of("maria", "juan", "lucia", "sofia", "pablo")).then().statusCode(200);
         active = getList(alice, listId);
         assertThat(active.jsonPath().getString("phase")).isEqualTo("VOTING");
         assertThat(active.jsonPath().getInt("currentRound")).isEqualTo(2);
-        assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "maria", "juan", "sofia");
+        assertThat(active.jsonPath().getList("currentPool")).containsExactly("lucia", "maria", "juan", "sofia", "pablo");
 
         // Voting for the previous round after advancing => 409
-        vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan")).then().statusCode(409);
+        vote(alice, listId, 1, List.of("lucia", "sofia", "maria", "juan", "pablo")).then().statusCode(409);
 
         // Final round: second vote completes the list
-        vote(alice, listId, 2, List.of("lucia", "maria", "juan", "sofia")).then().statusCode(200);
-        vote(bob, listId, 2, List.of("lucia", "maria", "sofia", "juan")).then().statusCode(200);
+        vote(alice, listId, 2, List.of("lucia", "maria", "juan", "sofia", "pablo")).then().statusCode(200);
+        vote(bob, listId, 2, List.of("lucia", "maria", "sofia", "juan", "pablo")).then().statusCode(200);
 
         assertThat(listRepository.findById((long) listId).orElseThrow().getPhase()).isEqualTo(ListPhase.COMPLETED);
 
@@ -119,11 +120,11 @@ class Spec004IntegrationTest {
         results.then().statusCode(200);
         assertThat(results.jsonPath().getInt("results[0].rank")).isEqualTo(1);
         assertThat(results.jsonPath().getString("results[0].name")).isEqualTo("lucia");
-        assertThat(results.jsonPath().getInt("results[0].score")).isEqualTo(6);
+        assertThat(results.jsonPath().getInt("results[0].score")).isEqualTo(8);
         assertThat(results.jsonPath().getString("results[1].name")).isEqualTo("maria");
-        assertThat(results.jsonPath().getInt("results[1].score")).isEqualTo(4);
+        assertThat(results.jsonPath().getInt("results[1].score")).isEqualTo(6);
         assertThat(results.jsonPath().getString("results[2].name")).isEqualTo("juan");
-        assertThat(results.jsonPath().getInt("results[2].score")).isEqualTo(1);
+        assertThat(results.jsonPath().getInt("results[2].score")).isEqualTo(3);
         assertThat(results.jsonPath().getList("results")).hasSize(3);
 
         // Non-members are forbidden from reading results
@@ -146,9 +147,9 @@ class Spec004IntegrationTest {
         Response active = getList(alice, listId);
         assertThat(active.jsonPath().getString("phase")).isEqualTo("VOTING");
         assertThat(active.jsonPath().getInt("totalRounds")).isEqualTo(3);
-        assertThat(active.jsonPath().getList("currentPool")).hasSize(16);
+        assertThat(active.jsonPath().getList("currentPool")).hasSize(17);
 
-        voteAndAdvance(alice, bob, listId, 1, 16);
+        voteAndAdvance(alice, bob, listId, 1, 17);
         assertThat(getList(alice, listId).jsonPath().getList("currentPool")).hasSize(10);
 
         voteAndAdvance(alice, bob, listId, 2, 10);

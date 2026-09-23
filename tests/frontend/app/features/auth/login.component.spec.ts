@@ -17,7 +17,8 @@ describe('LoginComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['setToken']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['setToken', 'loadProfile']);
+    authServiceSpy.loadProfile.and.returnValue(of({ id: 1, username: 'test', role: 'PARTICIPANT' }));
     apiServiceSpy = jasmine.createSpyObj('ApiService', ['login']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate', 'getCurrentNavigation']);
     routerSpy.getCurrentNavigation.and.returnValue(null);
@@ -56,8 +57,12 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
     
-    expect(apiServiceSpy.login).toHaveBeenCalled();
+    expect(apiServiceSpy.login).toHaveBeenCalledWith({
+      username: 'test',
+      password: 'password',
+    });
     expect(authServiceSpy.setToken).toHaveBeenCalledWith('fake');
+    expect(authServiceSpy.loadProfile).toHaveBeenCalled();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
   });
 

@@ -29,7 +29,7 @@ class ListMapperTest {
         entity.setCurrentRound(2);
         entity.setTotalRounds(3);
 
-        ListResponseDTO dto = mapper.toResponseDTO(entity, List.of("user1", "user2"), "owner1", List.of("ana", "luis"));
+        ListResponseDTO dto = mapper.toResponseDTO(entity, List.of("user1", "user2"), "owner1", List.of("ana", "luis"), true);
 
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("Test List");
@@ -42,5 +42,22 @@ class ListMapperTest {
         assertThat(dto.getTotalRounds()).isEqualTo(3);
         assertThat(dto.getCurrentPool()).containsExactly("ana", "luis");
         assertThat(dto.getMembers()).containsExactly("user1", "user2");
+        assertThat(dto.isMyStepCompleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("NFR-2: Map myStepCompleted as false")
+    void shouldMapMyStepCompletedFalse() {
+        ListEntity entity = new ListEntity();
+        entity.setId(1L);
+        entity.setPhase(ListPhase.ADDITION);
+        entity.setOwnerId(10L);
+        entity.setInvitationCode("CODE01");
+        entity.setCurrentRound(1);
+        entity.setTotalRounds(1);
+
+        ListResponseDTO dto = mapper.toResponseDTO(entity, List.of("user1"), "owner1", List.of(), false);
+
+        assertThat(dto.isMyStepCompleted()).isFalse();
     }
 }

@@ -66,4 +66,35 @@ describe('UiInputFieldComponent', () => {
 
     expect(submittedSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('TS-19: should render a visibility toggle for password inputs and flip the type on activation', () => {
+    fixture.componentRef.setInput('type', 'password');
+    fixture.detectChanges();
+
+    const toggle = fixture.nativeElement.querySelector(
+      '.ui-input-field__toggle',
+    ) as HTMLButtonElement;
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+
+    expect(toggle).toBeTruthy();
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-label')).toBe('Mostrar contraseña');
+    expect(input.getAttribute('type')).toBe('password');
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(input.getAttribute('type')).toBe('text');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.getAttribute('aria-label')).toBe('Ocultar contraseña');
+  });
+
+  it('should render no toggle for text inputs', () => {
+    fixture.componentRef.setInput('type', 'text');
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('.ui-input-field__toggle'),
+    ).toBeNull();
+  });
 });

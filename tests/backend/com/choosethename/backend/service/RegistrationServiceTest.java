@@ -30,7 +30,7 @@ class RegistrationServiceTest {
     @BeforeEach
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder(12);
-        registrationService = new RegistrationService(userRepository, passwordEncoder);
+        registrationService = new RegistrationService(userRepository, passwordEncoder, new PasswordPolicy());
     }
 
     @Test

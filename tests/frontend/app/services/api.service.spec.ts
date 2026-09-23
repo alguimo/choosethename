@@ -47,6 +47,14 @@ describe('ApiService', () => {
     req.flush({ id: 1, username: 'alvaro', role: 'PARTICIPANT' });
   });
 
+  it('should GET from /auth/me', () => {
+    service.getMe().subscribe((profile) => {
+      expect(profile.role).toBe('ADMIN');
+    });
+    const req = expectReq('GET', '/api/v1/auth/me');
+    req.flush({ id: 1, username: 'alvaro', role: 'ADMIN' });
+  });
+
   it('should POST to /lists', () => {
     const body = { name: 'La pandilla' };
     service.createList(body).subscribe();

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,12 +7,14 @@ import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { LocalStorageService } from '../../services/local-storage.service';
+import { ListResponse, NameEntry } from '../../models/api.models';
 import { UiButtonComponent } from '../../ui-kit/atoms/button/button.component';
 import { UiIconButtonComponent } from '../../ui-kit/atoms/icon-button/icon-button.component';
 import { UiInputFieldComponent } from '../../ui-kit/atoms/input-field/input-field.component';
 import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-message/validation-message.component';
 import { UiModalComponent } from '../../ui-kit/organisms/modal/modal.component';
 import { UiNameInputRowComponent } from '../../ui-kit/molecules/name-input-row/name-input-row.component';
+import { UiInviteModalComponent } from '../../ui-kit/molecules/invite-modal/invite-modal.component';
 
 const NAME_PATTERN = /^[\p{L} -]+$/u;
 
@@ -36,52 +38,75 @@ function normalizeName(name: string): string {
     UiValidationMessageComponent,
     UiModalComponent,
     UiNameInputRowComponent,
+    UiInviteModalComponent,
   ],
   template: `
     <section class="suggestion">
       <header class="suggestion__header">
         <h2 class="suggestion__title">Sugerencias</h2>
-        <ui-button
-          label="Terminar Fase"
-          [disabled]="submitting()"
-          [loading]="submitting()"
-          (clicked)="completeAddition()"
-        ></ui-button>
+        <div class="suggestion__header-actions">
+          @if (showInvite()) {
+            <ui-button
+              label="Invitar"
+              variant="secondary"
+              (clicked)="openInviteModal()"
+            ></ui-button>
+          }
+          <ui-button
+            label="Terminar Fase"
+            [disabled]="submitting() || waiting()"
+            [loading]="submitting()"
+            (clicked)="completeAddition()"
+          ></ui-button>
+        </div>
       </header>
 
-      <ui-name-input-row
-        label="Añade un nombre"
-        placeholder="Ej. Morena"
-        [formControl]="nameControl"
-        (nameSubmitted)="addName($event)"
-      ></ui-name-input-row>
+      @if (waiting()) {
+        <ui-validation-message type="info" [message]="waitingMessage" />
+        <ul class="suggestion__list">
+          @for (entry of submittedNames(); track entry.normalizedName) {
+            <li class="suggestion__item suggestion__item--readonly">
+              <span class="suggestion__item-name">{{ entry.name }}</span>
+            </li>
+          } @empty {
+            <li class="suggestion__item suggestion__item--empty">Aún no hay nombres.</li>
+          }
+        </ul>
+      } @else {
+        <ui-name-input-row
+          label="Añade un nombre"
+          placeholder="Ej. Morena"
+          [formControl]="nameControl"
+          (nameSubmitted)="addName($event)"
+        ></ui-name-input-row>
 
-      @if (!localStorage.isAvailable()) {
-        <ui-validation-message type="warning" [message]="persistenceWarning" />
-      }
-
-      @if (inputError()) {
-        <ui-validation-message type="error" [message]="inputError()!" />
-      }
-      @if (duplicateWarning()) {
-        <ui-validation-message type="warning" [message]="duplicateWarning()!" />
-      }
-
-      <ul class="suggestion__list">
-        @for (name of names(); track name; let i = $index) {
-          <li class="suggestion__item">
-            <span class="suggestion__item-name">{{ name }}</span>
-            <ui-icon-button
-              icon="delete"
-              tooltip="Eliminar"
-              variant="danger"
-              (clicked)="removeName(i)"
-            ></ui-icon-button>
-          </li>
-        } @empty {
-          <li class="suggestion__item suggestion__item--empty">Aún no hay nombres.</li>
+        @if (!localStorage.isAvailable()) {
+          <ui-validation-message type="warning" [message]="persistenceWarning" />
         }
-      </ul>
+
+        @if (inputError()) {
+          <ui-validation-message type="error" [message]="inputError()!" />
+        }
+        @if (duplicateWarning()) {
+          <ui-validation-message type="warning" [message]="duplicateWarning()!" />
+        }
+
+        <ul class="suggestion__list">
+          @for (name of names(); track name; let i = $index) {
+            <li class="suggestion__item">
+              <span class="suggestion__item-name">{{ name }}</span>
+              <ui-icon-button
+                icon="delete"
+                tooltip="Eliminar"
+                variant="danger"
+                (clicked)="removeName(i)"
+              ></ui-icon-button>
+            </li>
+          } @empty {
+            <li class="suggestion__item suggestion__item--empty">Aún no hay nombres.</li>
+          }
+        </ul>
+      }
 
       @if (submitError()) {
         <ui-validation-message type="error" [message]="submitError()!" />
@@ -114,6 +139,13 @@ function normalizeName(name: string): string {
         ></ui-button>
       </form>
     </ui-modal>
+
+    <ui-invite-modal
+      [title]="'Invitar a ' + (list()?.name ?? '')"
+      [code]="list()?.invitationCode ?? ''"
+      [visible]="showInviteModal()"
+      (closed)="closeInviteModal()"
+    ></ui-invite-modal>
   `,
   styles: [
     `
@@ -130,6 +162,12 @@ function normalizeName(name: string): string {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: var(--ui-spacing-sm);
+      }
+
+      .suggestion__header-actions {
+        display: flex;
+        align-items: center;
         gap: var(--ui-spacing-sm);
       }
 
@@ -176,6 +214,10 @@ function normalizeName(name: string): string {
         color: var(--ui-color-on-surface-variant);
       }
 
+      .suggestion__item--readonly {
+        color: var(--ui-color-on-surface-variant);
+      }
+
       .suggestion__reauth-hint {
         margin: 0 0 var(--ui-spacing-sm);
         font-family: var(--ui-font-family);
@@ -198,7 +240,12 @@ export class SuggestionComponent implements OnInit {
 
   readonly persistenceWarning =
     'Tu progreso no se guardará localmente. No cierres la página.';
+  readonly waitingMessage = 'Esperando a que el resto complete la fase';
+  readonly list = signal<ListResponse | null>(null);
   readonly names = signal<string[]>([]);
+  readonly submittedNames = signal<NameEntry[]>([]);
+  readonly waiting = signal(false);
+  readonly showInviteModal = signal(false);
   readonly inputError = signal<string | null>(null);
   readonly duplicateWarning = signal<string | null>(null);
   readonly submitError = signal<string | null>(null);
@@ -207,6 +254,10 @@ export class SuggestionComponent implements OnInit {
   readonly reAuthError = signal<string | null>(null);
   readonly reAuthLoading = signal(false);
   readonly nameControl = new FormControl<string>('');
+
+  readonly showInvite = computed(
+    () => this.list()?.invitationsOpen === true && !!this.list()?.invitationCode,
+  );
 
   readonly reAuthForm = this.fb.group({
     username: ['', Validators.required],
@@ -221,7 +272,14 @@ export class SuggestionComponent implements OnInit {
   private loadListState(): void {
     this.apiService.getListById(this.listId).subscribe({
       next: (list) => {
+        this.list.set(list);
         if (list.phase === 'ADDITION') {
+          if (list.myStepCompleted) {
+            this.waiting.set(true);
+            this.loadSubmittedNames();
+            return;
+          }
+          this.waiting.set(false);
           this.restoreLocalSuggestions();
           return;
         }
@@ -230,8 +288,17 @@ export class SuggestionComponent implements OnInit {
       error: () => {
         // Offline resilience (FR-4, FR-45): keep local editing available and
         // rely on re-authentication at phase completion.
+        this.list.set(null);
+        this.waiting.set(false);
         this.restoreLocalSuggestions();
       },
+    });
+  }
+
+  private loadSubmittedNames(): void {
+    this.apiService.getMyNames(this.listId).subscribe({
+      next: (response) => this.submittedNames.set(response.names),
+      error: () => this.submittedNames.set([]),
     });
   }
 
@@ -253,6 +320,7 @@ export class SuggestionComponent implements OnInit {
   }
 
   addName(name: string): void {
+    if (this.waiting()) return;
     const trimmed = name.trim();
     this.inputError.set(null);
     this.duplicateWarning.set(null);
@@ -273,6 +341,7 @@ export class SuggestionComponent implements OnInit {
   }
 
   removeName(index: number): void {
+    if (this.waiting()) return;
     const current = [...this.names()];
     if (index < 0 || index >= current.length) return;
 
@@ -282,7 +351,7 @@ export class SuggestionComponent implements OnInit {
   }
 
   completeAddition(): void {
-    if (this.submitting()) return;
+    if (this.submitting() || this.waiting()) return;
 
     if (this.names().length === 0) {
       this.submitError.set('Debes añadir al menos un nombre');
@@ -343,6 +412,14 @@ export class SuggestionComponent implements OnInit {
   closeReAuth(): void {
     this.showReAuth.set(false);
     this.reAuthError.set(null);
+  }
+
+  openInviteModal(): void {
+    this.showInviteModal.set(true);
+  }
+
+  closeInviteModal(): void {
+    this.showInviteModal.set(false);
   }
 
   private persist(): void {

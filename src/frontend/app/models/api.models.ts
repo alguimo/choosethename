@@ -39,15 +39,21 @@ export interface ListResponse {
   totalRounds: number;
   currentPool: string[];
   members: ListMember[];
+  myStepCompleted: boolean;
 }
 
 export interface NameEntry {
   name: string;
   normalizedName: string;
+  adopted?: boolean;
 }
 
 export interface AddNameRequest {
   names: string[];
+}
+
+export interface NamesResponse {
+  names: NameEntry[];
 }
 
 export interface SelectionResponse {

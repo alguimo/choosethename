@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
@@ -58,7 +59,7 @@ class ListServiceCloseInvitationsTest {
     private void stubResponseDto() {
         when(membershipRepository.findByListId(LIST_ID)).thenReturn(List.of());
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(new User()));
-        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList()))
+        when(listMapper.toResponseDTO(any(ListEntity.class), anyList(), any(), anyList(), anyBoolean()))
                 .thenReturn(new ListResponseDTO());
     }
 

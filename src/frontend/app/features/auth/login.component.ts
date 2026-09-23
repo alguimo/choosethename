@@ -88,6 +88,7 @@ export class LoginComponent {
     this.apiService.login(this.loginForm.value).subscribe({
       next: (res) => {
         this.authService.setToken(res.accessToken);
+        this.authService.loadProfile().subscribe();
         this.router.navigate(['/']);
       },
       error: () => {

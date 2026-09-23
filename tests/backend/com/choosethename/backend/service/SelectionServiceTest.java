@@ -112,6 +112,27 @@ class SelectionServiceTest {
     }
 
     @Test
+    @DisplayName("FR-10: Faded suggestions report adopted=true after adoption; common names are always adopted")
+    void shouldFlagAdoptedFadedSuggestions() {
+        enterSelectionPhase();
+
+        SelectionResponseDTO before = selectionService.getSelection(list.getId(), userA.getId());
+        assertThat(before.getFadedSuggestions()).hasSize(1);
+        assertThat(before.getFadedSuggestions().get(0).getNormalizedName()).isEqualTo("lucia");
+        assertThat(before.getFadedSuggestions().get(0).isAdopted()).isFalse();
+
+        AdoptNameRequestDTO request = new AdoptNameRequestDTO();
+        request.setName("lucia");
+        selectionService.adoptFadedName(list.getId(), userA.getId(), request);
+
+        SelectionResponseDTO after = selectionService.getSelection(list.getId(), userA.getId());
+        assertThat(after.getFadedSuggestions()).hasSize(1);
+        assertThat(after.getFadedSuggestions().get(0).getNormalizedName()).isEqualTo("lucia");
+        assertThat(after.getFadedSuggestions().get(0).isAdopted()).isTrue();
+        assertThat(after.getCommonNames()).allMatch(NameResponseDTO.NameEntry::isAdopted);
+    }
+
+    @Test
     @DisplayName("Should reject adoption of a common name")
     void shouldRejectAdoptionOfCommonName() {
         enterSelectionPhase();

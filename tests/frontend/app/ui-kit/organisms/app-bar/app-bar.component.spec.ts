@@ -53,4 +53,43 @@ describe('UiAppBarComponent', () => {
 
     expect(emitted).toBeTrue();
   });
+
+  it('TS-21: should render the user label when provided', () => {
+    fixture.componentRef.setInput('userLabel', 'alvaro');
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('alvaro');
+  });
+
+  it('TS-21: should not render the admin action when showAdmin is false', () => {
+    fixture.componentRef.setInput('showAdmin', false);
+    fixture.detectChanges();
+
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.ui-button'),
+    ).map((button) => (button.textContent ?? '').trim());
+
+    expect(buttons).not.toContain('Admin');
+  });
+
+  it('TS-21: should render the admin action and emit adminClicked when showAdmin is true', () => {
+    fixture.componentRef.setInput('showAdmin', true);
+    fixture.detectChanges();
+
+    let emitted = false;
+    component.adminClicked.subscribe(() => (emitted = true));
+
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.ui-button'),
+    );
+    const adminButton = buttons.find(
+      (button) => (button.textContent ?? '').trim() === 'Admin',
+    ) as HTMLButtonElement;
+
+    expect(adminButton).toBeTruthy();
+    adminButton.click();
+
+    expect(emitted).toBeTrue();
+  });
 });
