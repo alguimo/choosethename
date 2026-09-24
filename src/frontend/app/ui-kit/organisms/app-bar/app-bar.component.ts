@@ -75,6 +75,16 @@ import { UiButtonComponent } from '../../atoms/button/button.component';
         font-size: var(--ui-font-size-sm);
         color: var(--ui-color-on-surface-variant);
       }
+
+      @media (max-width: 640px) {
+        .ui-app-bar {
+          flex-wrap: wrap;
+        }
+
+        .ui-app-bar__user {
+          display: none;
+        }
+      }
     `,
   ],
 })

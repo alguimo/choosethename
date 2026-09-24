@@ -51,17 +51,19 @@ import { UiInviteModalComponent } from '../../ui-kit/molecules/invite-modal/invi
         </div>
       }
 
-      @for (list of lists(); track list.id) {
-        <ui-list-card
-          [title]="list.name"
-          [phase]="list.phase"
-          [memberCount]="list.members.length"
-          [invitationCode]="list.invitationCode"
-          [invitationsOpen]="list.invitationsOpen"
-          (clicked)="onCardClick(list)"
-          (inviteClicked)="openInviteModal(list)"
-        />
-      }
+      <div class="dashboard__grid">
+        @for (list of lists(); track list.id) {
+          <ui-list-card
+            [title]="list.name"
+            [phase]="list.phase"
+            [memberCount]="list.members.length"
+            [invitationCode]="list.invitationCode"
+            [invitationsOpen]="list.invitationsOpen"
+            (clicked)="onCardClick(list)"
+            (inviteClicked)="openInviteModal(list)"
+          />
+        }
+      </div>
 
       <ui-modal title="Crear lista nueva" [visible]="showCreateModal()" (closed)="closeCreateModal()">
         <form [formGroup]="createForm" (ngSubmit)="createList()">
@@ -125,12 +127,19 @@ import { UiInviteModalComponent } from '../../ui-kit/molecules/invite-modal/invi
   styles: [
     `
       .dashboard {
-        max-width: 480px;
-        margin: 2rem auto;
-        padding: 1rem;
+        width: min(100% - var(--ui-layout-gutter) * 2, 1024px);
+        margin: var(--ui-spacing-lg) auto;
+        padding: var(--ui-spacing-md);
         display: flex;
         flex-direction: column;
         gap: var(--ui-spacing-md);
+      }
+
+      .dashboard__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--ui-spacing-md);
+        align-items: stretch;
       }
 
       .dashboard__title {

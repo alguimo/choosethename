@@ -78,7 +78,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
       }
 
       .ui-button--danger:hover:not(:disabled) {
-        background-color: #c62828;
+        background-color: var(--ui-color-danger-hover);
       }
 
       .ui-button--ghost {

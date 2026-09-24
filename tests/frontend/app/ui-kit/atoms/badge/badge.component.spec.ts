@@ -5,10 +5,10 @@ import { UiBadgeComponent } from '@app/ui-kit/atoms/badge/badge.component';
 type ColorVariant = 'default' | 'success' | 'warning' | 'danger';
 
 const COLOR_BACKGROUND: Record<ColorVariant, string> = {
-  default: 'rgb(244, 245, 247)',
-  success: 'rgb(226, 242, 227)',
-  warning: 'rgb(253, 240, 220)',
-  danger: 'rgb(253, 236, 234)',
+  default: 'rgb(38, 40, 51)',
+  success: 'rgb(30, 58, 36)',
+  warning: 'rgb(58, 46, 30)',
+  danger: 'rgb(58, 30, 30)',
 };
 
 describe('UiBadgeComponent', () => {

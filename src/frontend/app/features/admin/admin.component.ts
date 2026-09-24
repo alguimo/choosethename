@@ -93,9 +93,9 @@ import { UiModalComponent } from '../../ui-kit/organisms/modal/modal.component';
   styles: [
     `
       .admin {
-        max-width: 640px;
-        margin: 2rem auto;
-        padding: 1rem;
+        width: min(100% - var(--ui-layout-gutter) * 2, 1024px);
+        margin: var(--ui-spacing-lg) auto;
+        padding: var(--ui-spacing-md);
         display: flex;
         flex-direction: column;
         gap: var(--ui-spacing-md);
@@ -165,6 +165,16 @@ import { UiModalComponent } from '../../ui-kit/organisms/modal/modal.component';
         justify-content: flex-end;
         gap: var(--ui-spacing-sm);
         margin-top: var(--ui-spacing-md);
+      }
+
+      @media (max-width: 640px) {
+        .admin__users {
+          overflow-x: auto;
+        }
+
+        .admin__user {
+          min-width: 480px;
+        }
       }
     `,
   ],

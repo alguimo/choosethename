@@ -150,9 +150,9 @@ function normalizeName(name: string): string {
   styles: [
     `
       .suggestion {
-        max-width: 480px;
-        margin: 2rem auto;
-        padding: 1rem;
+        width: var(--ui-layout-page-width);
+        margin: var(--ui-spacing-lg) auto;
+        padding: var(--ui-spacing-md);
         display: flex;
         flex-direction: column;
         gap: var(--ui-spacing-md);

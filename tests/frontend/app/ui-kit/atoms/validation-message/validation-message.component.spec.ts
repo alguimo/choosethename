@@ -3,9 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UiValidationMessageComponent, UiValidationType } from '@app/ui-kit/atoms/validation-message/validation-message.component';
 
 const EXPECTED_COLOR: Record<UiValidationType, string> = {
-  error: 'rgb(211, 47, 47)',
-  warning: 'rgb(180, 83, 9)',
-  info: 'rgb(2, 136, 209)',
+  error: 'rgb(229, 115, 115)',
+  warning: 'rgb(255, 183, 77)',
+  info: 'rgb(79, 195, 247)',
 };
 
 describe('UiValidationMessageComponent', () => {

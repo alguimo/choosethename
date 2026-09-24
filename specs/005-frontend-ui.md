@@ -148,6 +148,14 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **FR-77**: IF the password reset fails (400/404), THEN THE SYSTEM MUST display the backend error message inline and keep the modal open.
 *   **FR-78**: WHEN a non-ADMIN navigates to `/admin`, THEN THE SYSTEM MUST redirect to the home dashboard. WHEN an unauthenticated user navigates to `/admin`, THEN THE SYSTEM MUST redirect to the login screen.
 
+### 13. Dark Theme & Responsive Layout
+
+*   **FR-88**: THE SYSTEM MUST render the application in the dark theme by default, driven entirely by the `ui-kit` design tokens (Spec 006 FR-51) with `color-scheme: dark`. No page-level hard-coded colors are allowed.
+*   **FR-89**: IF the viewport is narrower than `640px`, THEN THE SYSTEM MUST keep every screen usable without horizontal scrolling: the app bar collapses and hides the user label, the dashboard actions wrap, and every page container uses `min(100% - 2 * gutter, ...)` gutters.
+*   **FR-90**: WHEN the viewport is at least `768px` wide, THEN THE SYSTEM MUST render the dashboard list cards in a responsive grid (`repeat(auto-fill, minmax(280px, 1fr))`) inside a container up to `1024px` wide, and the flow pages (suggestion, selection, vote, results, login, register) MAY widen up to `720px`.
+*   **FR-91**: WHEN the viewport is narrower than `640px`, THEN THE SYSTEM MUST make the admin user list horizontally scrollable instead of overflowing the screen.
+*   **FR-92**: EVERY interactive control MUST keep a touch target of at least `44px` height where feasible on small viewports.
+
 ---
 
 ## Non-Functional Requirements
@@ -185,6 +193,8 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **Reset Target Not Found**: IF `PATCH /api/v1/admin/users/{id}/password` returns 404, THEN THE SYSTEM MUST display the backend error and keep the reset modal open (FR-77).
 *   **Finished Phase Waiting for Others**: Once a Participant finishes their current phase step (`myStepCompleted=true`) but the list phase has not advanced, the corresponding screen MUST switch to read-only mode with a waiting message (FR-83, FR-86, FR-84). The Participant cannot modify names or re-vote until the other members finish.
 *   **Voting Pool Includes Common Names**: The voting `currentPool` returned by `GET /api/v1/lists/{id}` MUST contain common names plus adopted faded names, so common names are never missing from a round (Spec 004 FR-6).
+*   **Narrow Viewport (≤360px)**: Every authenticated screen MUST fit without horizontal scrolling: containers use `min(100% - 2 * gutter, ...)`, the app bar wraps and hides the user label, and the dashboard cards stack in a single column (FR-89).
+*   **Wide Viewport (≥1024px)**: The dashboard uses a multi-column card grid and the admin screen widens; no fixed `480px` ceiling applies (FR-90, FR-91).
 
 ---
 
@@ -251,6 +261,10 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   **TS-60**: Voting waiting lock: with `myStepCompleted=true` and the list still in VOTING, the ranking list and "Enviar voto" are disabled and the waiting message is shown.
 *   **TS-61**: The suggestion screen renders the "Invitar" action when `invitationsOpen=true` and opens `ui-invite-modal` with the list code; it does not render it when `invitationsOpen=false`.
 *   **TS-62**: Invitation modal (`ui-invite-modal`) shows the copied confirmation on successful copy and the manual-copy message on clipboard failure.
+*   **TS-63**: The application renders the dark theme by default: `_variables.scss` defines dark token values with `color-scheme: dark`, and the `ui-button` danger hover uses the `--ui-color-danger-hover` token (no hard-coded color).
+*   **TS-64**: The dashboard renders its list cards inside a `dashboard__grid` container using `repeat(auto-fill, minmax(280px, 1fr))` and a page container up to `1024px` wide.
+*   **TS-65**: Every flow page container (suggestion, selection, vote, results, login, register) uses `min(100% - 2 * gutter, ...)` so a `360px` viewport renders without horizontal scrolling.
+*   **TS-66**: The admin screen wraps its user list in a horizontally scrollable container for viewports narrower than `640px`.
 
 ---
 
@@ -259,7 +273,7 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   Automatic matching or grouping of similar names (backend concern, Spec 003).
 *   Elimination round UI logic (round transitions are automated by the backend, Spec 004). The frontend only reacts to the `currentRound` and `totalRounds` values returned by the API.
 *   Token refresh logic (Spec 001).
-*   Responsive/mobile-first layout optimization (desktop-first for MVP).
+*   Runtime theme switching (user light/dark toggle).
 *   Accessibility (WCAG) compliance beyond basic semantic HTML (future iteration).
 *   Removing a user from a list (voluntary leave or membership removal).
 
@@ -278,5 +292,7 @@ The UI is written entirely in Spanish. All code, variable/function names, commit
 *   Results screen displaying final rankings.
 *   Invitation sharing: "Invitar" action on open lists, invitation modal with copy-to-clipboard and clipboard fallback (FR-67..FR-71).
 *   Administration: profile fetch via `/auth/me`, ADMIN-only app-bar action, `/admin` screen listing users, and the password-reset modal (FR-72..FR-78).
+*   Dark theme: the app renders the dark palette by default with no hard-coded page colors (FR-88).
+*   Responsive layout: app bar collapses on small viewports, the dashboard card grid adapts at ≥768px, flow pages widen at ≥768px, and the admin list scrolls horizontally under 640px (FR-89..FR-92).
 *   Cache management verified: clear on success, retain on error, 5-minute dashboard refresh.
 *   Full test suite passing (`npm test`) with zero lint warnings (`npm run lint`).

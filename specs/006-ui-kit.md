@@ -50,16 +50,42 @@ src/app/ui-kit/
 ```
 
 ### 2. Design Tokens
-All visual properties are defined as CSS custom properties in `tokens/_variables.scss`. Components reference these tokens instead of hard-coded values.
+All visual properties are defined as CSS custom properties in `tokens/_variables.scss`. Components reference these tokens instead of hard-coded values. The default palette is **dark** (`color-scheme: dark`); consumers can override any token at a lower cascade scope (e.g. a `.theme-light` class) without touching component code.
 
-| Token | Default | Purpose |
+| Token | Default (dark) | Purpose |
 |---|---|---|
-| `--ui-color-primary` | `#1A73E8` | Primary action color |
-| `--ui-color-danger` | `#D32F2F` | Error / destructive state |
-| `--ui-color-success` | `#2E7D32` | Success state |
-| `--ui-color-surface` | `#FFFFFF` | Card / container background |
-| `--ui-color-on-surface` | `#1C1B1F` | Text on surface |
-| `--ui-color-outline` | `#79747E` | Borders, dividers |
+| `--ui-color-primary` | `#6FA5F0` | Primary action color |
+| `--ui-color-on-primary` | `#06121F` | Text/icon on primary |
+| `--ui-color-primary-hover` | `#8AB6F5` | Primary hover state |
+| `--ui-color-primary-container` | `#21324B` | Primary-tinted container |
+| `--ui-color-on-primary-container` | `#C9DCFF` | Text on primary container |
+| `--ui-color-danger` | `#E57373` | Error / destructive state |
+| `--ui-color-on-danger` | `#2B0A0A` | Text on danger |
+| `--ui-color-danger-hover` | `#EF9A9A` | Destructive hover state |
+| `--ui-color-danger-container` | `#3A1E1E` | Destructive container |
+| `--ui-color-on-danger-container` | `#FFDAD6` | Text on danger container |
+| `--ui-color-success` | `#81C784` | Success state |
+| `--ui-color-success-container` | `#1E3A24` | Success container |
+| `--ui-color-on-success-container` | `#C8E6C9` | Text on success container |
+| `--ui-color-warning` | `#FFB74D` | Warning state |
+| `--ui-color-warning-container` | `#3A2E1E` | Warning container |
+| `--ui-color-on-warning-container` | `#FFE0B2` | Text on warning container |
+| `--ui-color-info` | `#4FC3F7` | Info state |
+| `--ui-color-info-container` | `#1E3343` | Info container |
+| `--ui-color-on-info` | `#06121F` | Text on info |
+| `--ui-color-background` | `#14151A` | App background |
+| `--ui-color-surface` | `#1D1E26` | Card / container background |
+| `--ui-color-surface-variant` | `#262833` | Elevated / muted surface |
+| `--ui-color-on-surface` | `#E8E6ED` | Text on surface |
+| `--ui-color-on-surface-variant` | `#B9B7C3` | Secondary text |
+| `--ui-color-outline` | `#8A8794` | Borders, dividers |
+| `--ui-color-outline-variant` | `#3A3C47` | Subtle borders |
+| `--ui-color-backdrop` | `rgba(0, 0, 0, 0.6)` | Modal backdrop |
+| `--ui-color-focus-ring` | `rgba(62, 153, 249, 0.5)` | Focus outline |
+| `--ui-layout-gutter` | `1rem` | Horizontal gutter for page containers |
+| `--ui-layout-max-width` | `480px` | Page container max width (720px at ≥768px viewports) |
+| `--ui-layout-page-width` | `min(100% - var(--ui-layout-gutter) * 2, var(--ui-layout-max-width))` | Derived page container width (keeps gutters on small viewports) |
+| `--ui-breakpoint-sm` | `640px` | Small viewport threshold (see FR-52) |
 | `--ui-radius-sm` | `4px` | Small radius (buttons, inputs) |
 | `--ui-radius-md` | `8px` | Medium radius (cards, modals) |
 | `--ui-spacing-xs` | `4px` | Tight spacing |
@@ -162,6 +188,13 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **FR-41**: THE SYSTEM MUST render the title on the left and the logout action on the right as a presentational bar with no routing or authentication logic.
 *   **FR-47**: THE SYSTEM MUST provide a `ui-app-bar` component with optional inputs `userLabel` (string) and `showAdmin` (boolean), and an `adminClicked` output. WHEN `showAdmin` is `true`, THE SYSTEM MUST render an admin action that emits `adminClicked` when activated.
 
+### 5. Theming & Responsiveness
+
+*   **FR-51**: THE SYSTEM MUST render the dark palette by default. IF a consuming application does not override the design tokens, THEN THE SYSTEM MUST fall back to the dark values defined in `_variables.scss` with `color-scheme: dark`.
+*   **FR-52**: EVERY responsive rule MUST use the breakpoint tokens `--ui-breakpoint-sm` (`640px`), `768px` (medium) and `1024px` (large), applied as `@media (min-width: ...)` for progressive enhancement.
+*   **FR-53**: WHEN `ui-app-bar` is rendered in a viewport narrower than `640px`, THEN THE SYSTEM MUST allow the bar content to wrap and MUST hide the `userLabel` while keeping the title and every action (admin, logout) visible and operable.
+*   **FR-54**: EVERY token table color MUST be a dark-palette-safe value that keeps a contrast ratio of at least 4.5:1 against its paired `on-*`/`container` surface. EVERY component MUST resolve colors exclusively through tokens (no hard-coded color values).
+
 ---
 
 ## Non-Functional Requirements
@@ -179,7 +212,8 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **Very Long Name in Input**: THE SYSTEM MUST truncate the displayed text with an ellipsis if it exceeds the container width. The full value remains available via the `value` output.
 *   **Rapid Sequential Submissions in NameInputRow**: THE SYSTEM MUST debounce or disable the submit action for 300ms after each submission to prevent duplicate emissions.
 *   **Modal Opened While Another Modal Is Open**: THE SYSTEM MUST stack modals (newest on top) and only trap focus within the topmost modal.
-*   **Theme Tokens Not Defined**: IF a consuming application does not define the CSS custom properties, THEN THE SYSTEM MUST fall back to the default values defined in `_variables.scss`.
+*   **Theme Tokens Not Defined**: IF a consuming application does not define the CSS custom properties, THEN THE SYSTEM MUST fall back to the default **dark** values defined in `_variables.scss`.
+*   **Dark Palette on Light Systems**: IF the operating system prefers a light color scheme but the consuming application does not override the tokens, THEN THE SYSTEM MUST still render the dark palette (dark is the default, not system-driven).
 *   **Clipboard Unavailable in CopyField**: `ui-copy-field` selects its `value` for manual copy and emits `copyFailed` (FR-46).
 *   **Password Visibility Toggle Accessibility**: The toggle MUST keep focus after activation and announce its state via `aria-pressed`/`aria-label` (FR-42).
 *   **Very Long Invitation Code Display**: `ui-copy-field` MUST truncate an over-long displayed value with an ellipsis while keeping the full value for copy.
@@ -219,6 +253,8 @@ All visual properties are defined as CSS custom properties in `tokens/_variables
 *   **TS-21**: `ui-app-bar` with `showAdmin=true` renders the admin action and emits `adminClicked` on activation.
 *   **TS-22**: `ui-copy-field` copies `value` on "Copiar" and emits `copied`; with an unavailable clipboard it selects the value and emits `copyFailed`.
 *   **TS-23**: `ui-invite-modal` renders the title, code and copy action; it emits `closed` on close and shows the copied/manual-copy notices per FR-49/FR-50.
+*   **TS-24**: `_variables.scss` defines the dark palette by default (paired `on-*`/`container` tokens with ≥4.5:1 contrast) plus `--ui-color-danger-hover`, and sets `color-scheme: dark`.
+*   **TS-25**: `ui-app-bar` keeps the title and the admin/logout actions in the DOM under `640px` while dropping the `userLabel` from view (CSS breakpoint rule per FR-53).
 
 ---
 

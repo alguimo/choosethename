@@ -30,7 +30,6 @@
               "src/frontend/assets"
             ],
             "styles": [
-              "@angular/material/prebuilt-themes/indigo-pink.css",
               "src/frontend/styles.scss"
             ],
             "scripts": []
@@ -94,7 +93,6 @@
               "src/frontend/assets"
             ],
             "styles": [
-              "@angular/material/prebuilt-themes/indigo-pink.css",
               "src/frontend/styles.scss"
             ],
             "scripts": []

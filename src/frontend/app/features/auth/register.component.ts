@@ -51,7 +51,7 @@ import { UiValidationMessageComponent } from '../../ui-kit/atoms/validation-mess
     </div>
   `,
   styles: [`
-    .register-container { max-width: 400px; margin: 2rem auto; padding: 1rem; }
+    .register-container { width: min(100% - var(--ui-layout-gutter) * 2, 400px); margin: var(--ui-spacing-lg) auto; padding: var(--ui-spacing-md); }
     form { display: flex; flex-direction: column; gap: 1rem; }
   `]
 })
