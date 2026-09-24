@@ -17,7 +17,7 @@ spring:
     locations: classpath:db/migration
 
 jwt:
-  secret: REDACTED
+  secret: f290ca65afc7bdb9f044410eee14ff9f9d7f0a7fb2c29c3e4ff803b3e777ed42
   expiration-ms: 86400000
 
 cors:

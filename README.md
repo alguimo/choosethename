@@ -9,7 +9,7 @@ Two strictly decoupled layers communicating over stateless JSON REST contracts (
 - **Backend** (`src/backend`, `tests/backend`): Spring Boot 3.x (Java 17), MapStruct, Flyway migrations, BCrypt/JWT security.
 - **Frontend** (`src/frontend`, `tests/frontend`): Angular 17 (standalone components), Angular Material + CDK, RxJS.
 
-Specifications and plans follow Spec-Driven Development and live under `specs/` (see `specs/00-constitution.md`, `specs/01-system-spec.md`, `specs/02-contracts.md`, `specs/03-task-plan.md`).
+Specifications and plans follow Spec-Driven Development and live under `specs/` (see `specs/00-constitution.md`, `specs/01-system-spec.md`, `specs/02-contracts.md`, `specs/03-task-plan.md`, and subsystem specs 001-008).
 
 ## Repository layout
 
@@ -49,4 +49,4 @@ Run linters/formatters: `mvn spotless:apply` (plugin not yet configured in `pom.
 
 ## Database
 
-A local PostgreSQL (16) is provided via `docker-compose.yml` (or the duplicate at `bdd/docker-compose.yml`). The backend applies schema migrations with Flyway on startup. Connection values come from the `BDD_*` environment variables documented above.
+A local PostgreSQL (16) is provided via `docker-compose.yml`. The backend applies schema migrations with Flyway on startup. Connection values come from the `BDD_*` environment variables documented above.
