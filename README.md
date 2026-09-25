@@ -2,6 +2,22 @@
 
 Collaborative web application that helps groups choose a name through a structured workflow of **suggestions, selection, voting rounds, and results**. A group forms a *list* with an invitation code, members propose *names*, common and faded suggestions are matched, participants vote through elimination rounds, and the system exposes the final ranked result.
 
+## Why this project exists
+
+This project began as a small personal need: I wanted a tool that would help a group choose a name together. Building it also became an opportunity to put Spec-Driven Development into practice, using the specifications as the source of truth without losing sight of the implementation.
+
+## How I approached the build
+
+I chose Java and Angular because I have professional experience with both technologies. That gave me the confidence to review and understand the generated code, and to modify and adapt it whenever necessary.
+
+AI-generated code is increasingly common, and choosing not to use these tools can mean falling behind. However, using them responsibly requires strong engineering practices and tests throughout the process. Tests should cover the application's workflows independently of how the code is implemented: the code must satisfy the tests, not the other way around.
+
+## v1.0
+
+The first version was intentionally focused on delivering a functional product and a reliable REST API integration. It supports the complete list workflow from beginning to end and allows users to register and later sign in. Lists are associated with their owner and invited members, and new members can only join during the suggestion phase.
+
+The UI is already usable and has a solid foundation, but there is still room to refine it. A more polished interface, with Figma incorporated into the design workflow, is planned for a future iteration.
+
 ## Architecture
 
 Two strictly decoupled layers communicating over stateless JSON REST contracts (`specs/openapi.yaml`):
@@ -14,7 +30,7 @@ Specifications and plans follow Spec-Driven Development and live under `specs/` 
 ## Repository layout
 
 ```
-specs/            SDD documentation (constitution, system, contracts, plans, openapi.yaml, subsystem specs 001-006)
+specs/            SDD documentation (constitution, system, contracts, plans, openapi.yaml, subsystem specs 001-008)
 src/backend/      Spring Boot production sources (Java + resources + Flyway migrations)
 src/frontend/     Angular application (app/, assets/, index.html, main.ts, styles.scss)
 tests/backend/    Backend unit & integration tests (JUnit) + test resources
